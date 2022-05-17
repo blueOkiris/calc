@@ -1,2 +1,5 @@
-# calc
-A calculator made form a terminal UI
+# Calc
+
+## Description
+
+A powerful calculator in a Linux terminal
