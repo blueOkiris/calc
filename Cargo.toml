@@ -1,8 +1,9 @@
 [package]
 name = "c"
-version = "22.9.1"
+version = "1.0.0"
 edition = "2021"
 
 [dependencies]
 clap = { version = "3.1.5", features = [ "cargo" ] }
+termion = "1.5.6"
 
