@@ -9,7 +9,8 @@ use crate::parser::{
     parse_integer,
     parse_number,
     parse_ident,
-    parse_word
+    parse_word,
+    parse_stmt
 };
 
 #[test]
@@ -41,5 +42,10 @@ pub fn parse_names() {
 #[test]
 pub fn parse_words() {
     assert!(parse_word("Hello", "Hello, world!").is_some());
+}
+
+#[test]
+pub fn parse_stmts() {
+    assert!(parse_stmt("\\sum(x)=x+1").is_some());
 }
 
