@@ -8,7 +8,8 @@
 use crate::parser::{
     parse_integer,
     parse_number,
-    parse_ident
+    parse_ident,
+    parse_word
 };
 
 #[test]
@@ -35,5 +36,10 @@ pub fn parse_names() {
     assert!(parse_ident("aA_9_d_.a").is_some());
     assert!(parse_ident("9a").is_none());
     assert!(parse_ident("a").is_some());
+}
+
+#[test]
+pub fn parse_words() {
+    assert!(parse_word("Hello", "Hello, world!").is_some());
 }
 
