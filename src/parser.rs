@@ -14,7 +14,8 @@
  * <product>        ::= <sum> | <sum> ( '*' | '/' ) <sum>
  * <sum>            ::= <term> | <term> ( '+' | '-' ) <term>
  * <term>           ::= <ident> | <func-call> | <float> | <int>
- *                    | 'j' <term> | '-' <term>
+ *                    | 'j' <term> | '-' <term> | <list>
+ * <list>           ::= '[' [ <term> { ',' <term> } ] ']'
  * <func-call>      ::= <ident> '(' [ <expr> { ',' <expr> } ] ')'
  * <ident>          ::= /[A-Za-z_]+[A-Za-z_0-9]* /
  * <float>          ::= /\-?([0-9]+\.)?[0-9]+([Ee]\-?[0-9]+)?/
