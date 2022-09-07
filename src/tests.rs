@@ -6,6 +6,7 @@
 #[cfg(test)]
 
 use crate::parser::{
+    Token,
     parse_integer,
     parse_number,
     parse_ident,
@@ -46,6 +47,11 @@ pub fn parse_words() {
 
 #[test]
 pub fn parse_stmts() {
-    assert!(parse_stmt("\\sum(x)=x+1").is_some());
+    // Debug print (call `cargo test -- --nocapture`)
+    println!("Assignment: {:?}", parse_stmt("\\sum(x, y) -> x + y").unwrap().token);
+    println!("Assignment: {:?}", parse_stmt("let x = 500").unwrap().token);
+
+    assert!(parse_stmt("\\sum(x, y) -> x + y").is_some());
+    assert!(parse_stmt("let x = 500").is_some());
 }
 
