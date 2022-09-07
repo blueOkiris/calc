@@ -1,6 +1,6 @@
 [package]
-name = "calc"
-version = "22.5.17"
+name = "c"
+version = "22.9.1"
 edition = "2021"
 
 [dependencies]
