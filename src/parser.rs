@@ -80,7 +80,7 @@ pub fn retrieve_integer(code: &str) -> Option<ParseResult> {
 }
 
 // <float> ::= /\-?([0-9]*\.)?[0-9]+([Ee]\-?[0-9]+)?/
-pub fn retrieve_float(code: &str) -> Option<ParseResult> {
+pub fn retrieve_number(code: &str) -> Option<ParseResult> {
     let mut float_str = String::new();
     let mut i = 0;
     let mut found_pt = false;
@@ -133,13 +133,42 @@ pub fn retrieve_float(code: &str) -> Option<ParseResult> {
         }
     }
 
-    if float_str.len() > 1 || float_str.chars().nth(0).unwrap() != '-' {
+    if float_str.len() > 0 || float_str.chars().nth(0).unwrap() != '-' {
         Some(ParseResult {
             new_start: i,
             token: Token::Number(float_str.clone())
         })
     } else {
         None
+    }
+}
+
+// <ident> ::= /[A-Za-z_]+[A-Za-z_0-9]*/
+pub fn retrieve_ident(code: &str) -> Option<ParseResult> {
+    let mut i = 0;
+    let mut ident_str = String::new();
+
+    // Make sure no num start
+    if code.len() > 0 && (
+        code.chars().nth(0).unwrap().is_alphabetic() || code.chars().nth(0).unwrap() == '_'
+    ) {
+        // Then get everything
+        while i < code.len() && (
+            code.chars().nth(i).unwrap().is_ascii_alphanumeric()
+                || code.chars().nth(i).unwrap() == '_'
+        ) {
+            ident_str.push(code.chars().nth(i).unwrap());
+            i += 1;
+        }
+    }
+
+    if ident_str.len() > 0 {
+        Some(ParseResult {
+            new_start: i,
+            token: Token::Identifier(ident_str.clone())
+        })
+    } else {
+        None    
     }
 }
 
