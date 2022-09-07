@@ -4,6 +4,7 @@
  */
 
 mod parser;
+mod tests;
 
 fn main() {
     
