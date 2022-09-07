@@ -9,7 +9,7 @@
  * <stmt>           ::= <expr> | <func-def> | <asgn>
  * <func-def>       ::= '\' <ident> '(' [ <ident> { ',' <ident> } ] ')' '=' <expr>
  * <asgn>           ::= 'let' <ident> ':=' <expr>
- * <expr>           ::= <expr> | '(' <expr> ')'
+ * <expr>           ::= <exp> | '(' <expr> ')'
  * <exp>            ::= <product> | <product> '^' <product>
  * <product>        ::= <sum> | <sum> ( '*' | '/' ) <sum>
  * <sum>            ::= <term> | <term> ( '+' | '-' ) <term>
@@ -43,6 +43,41 @@ pub struct ParseResult {
 }
 
 /* A series of helper functions for the parser */
+
+// <stmt> ::= <asgn> | <func-def> | <expr>
+fn parse_stmt(code: &str) -> Option<ParseResult> {
+    let attempt = parse_func_def(code);
+    if attempt.is_some() {
+        return attempt;
+    }
+    
+    let attempt = parse_asgn(code);
+    if attempt.is_some() {
+        return attempt;
+    }
+
+    parse_expr(code)
+}
+
+// <func-def> ::= '\' <ident> '(' [ <ident> { ',' <ident> } ] ')' '=' <expr>
+fn parse_func_def(code: &str) -> Option<ParseResult> {
+    None
+}
+
+// <asgn> ::= 'let' <ident> ':=' <expr>
+fn parse_asgn(code: &str) -> Option<ParseResult> {
+    None
+}
+
+// <expr> ::= <exp> | '(' <expr> ')'
+fn parse_expr(code: &str) -> Option<ParseResult> {
+    None
+}
+
+// Get a specified string of characters
+fn parse_word(word: &str, code: &str) -> Option<ParseResult> {
+    None
+}
 
 // <int> ::= /-?[0-9][0-9_]*_/
 pub fn parse_integer(code: &str) -> Option<ParseResult> {
