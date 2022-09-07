@@ -19,7 +19,7 @@
  * <func-call>      ::= <ident> '(' [ <expr> { ',' <expr> } ] ')'
  * <ident>          ::= /[A-Za-z_]+[A-Za-z_0-9]* /
  * <float>          ::= /\-?([0-9]+\.)?[0-9]+([Ee]\-?[0-9]+)?/
- * <int>            ::= /[0-9]+\_/
+ * <int>            ::= /[0-9]+_/
  */
 
 #[derive(Debug, Clone)]
@@ -45,6 +45,7 @@ pub struct ParseResult {
 
 /* A series of helper functions for the parser */
 
+// <int> ::= /[0-9][0-9_]*_/
 pub fn retrieve_integer(code: &str) -> Option<ParseResult> {
     let mut int_str = String::new();
     let mut i = 0;
