@@ -6,7 +6,6 @@
 #[cfg(test)]
 
 use crate::parser::{
-    Token,
     parse_integer,
     parse_number,
     parse_ident,
