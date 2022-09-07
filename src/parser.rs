@@ -45,7 +45,7 @@ pub struct ParseResult {
 /* A series of helper functions for the parser */
 
 // <int> ::= /-?[0-9][0-9_]*_/
-pub fn retrieve_integer(code: &str) -> Option<ParseResult> {
+pub fn parse_integer(code: &str) -> Option<ParseResult> {
     let mut int_str = String::new();
     let mut i = 0;
 
@@ -80,7 +80,7 @@ pub fn retrieve_integer(code: &str) -> Option<ParseResult> {
 }
 
 // <float> ::= /\-?([0-9]*\.)?[0-9]+([Ee]\-?[0-9]+)?/
-pub fn retrieve_number(code: &str) -> Option<ParseResult> {
+pub fn parse_number(code: &str) -> Option<ParseResult> {
     let mut float_str = String::new();
     let mut i = 0;
     let mut found_pt = false;
@@ -144,7 +144,7 @@ pub fn retrieve_number(code: &str) -> Option<ParseResult> {
 }
 
 // <ident> ::= /[A-Za-z_]+[A-Za-z_0-9]*/
-pub fn retrieve_ident(code: &str) -> Option<ParseResult> {
+pub fn parse_ident(code: &str) -> Option<ParseResult> {
     let mut i = 0;
     let mut ident_str = String::new();
 
