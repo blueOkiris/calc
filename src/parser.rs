@@ -10,7 +10,7 @@
  * EBNF:
  *
  * <stmt>           ::= <expr> | <func-def> | <asgn>
- * <func-def>       ::= '\' <ident> '(' [ <ident> { ',' <ident> } ] ')' '=' <expr>
+ * <func-def>       ::= '\' <ident> '(' [ <ident> { ',' <ident> } ] ')' '->' <expr>
  * <asgn>           ::= 'let' <ident> ':=' <expr>
  * <expr>           ::= <exp> | '(' <expr> ')'
  * <exp>            ::= <product> | <product> '^' <product>
@@ -25,7 +25,7 @@
  * <int>            ::= /-[0-9]+_/
  */
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Token {
     Statement(Box<Token>),
     FunctionDefinition(String, Vec<String>, Box<Token>),
@@ -39,7 +39,8 @@ pub enum Token {
     Number(String),
     Integer(String),
     List(Vec<Box<Token>>),
-    Word(String)
+    Word(String),
+    Whitespace
 }
 
 #[derive(Clone)]
@@ -94,7 +95,7 @@ fn parse_func_def(code: &str) -> Option<ParseResult> {
     if name.is_none() {
         return None;
     }
-    substr_start = name.clone().unwrap().new_start;
+    substr_start += name.clone().unwrap().new_start;
     let name_str = if let Token::Identifier(try_name_str) = name.unwrap().token {
         try_name_str
     } else {
@@ -106,13 +107,13 @@ fn parse_func_def(code: &str) -> Option<ParseResult> {
     if par.is_none() {
         return None;
     }
-    substr_start = par.unwrap().new_start;
+    substr_start += par.unwrap().new_start;
 
     // <ident> { ',' <ident> } ]
     let mut args = Vec::new();
     let try_arg = parse_ident(code.split_at(substr_start).1);
     if try_arg.is_some() {
-        substr_start = try_arg.clone().unwrap().new_start;
+        substr_start += try_arg.clone().unwrap().new_start;
         args.push(if let Token::Identifier(try_arg_str) = try_arg.unwrap().token {
             try_arg_str
         } else {
@@ -126,13 +127,13 @@ fn parse_func_def(code: &str) -> Option<ParseResult> {
             if comma.is_none() {
                 break;
             }
-            substr_start = comma.unwrap().new_start;
+            substr_start += comma.unwrap().new_start;
 
             let arg = parse_ident(code.split_at(substr_start).1);
             if arg.is_none() {
                 return None;
             }
-            substr_start = arg.clone().unwrap().new_start;
+            substr_start += arg.clone().unwrap().new_start;
             args.push(if let Token::Identifier(arg_str) = arg.unwrap().token {
                 arg_str
             } else {
@@ -146,20 +147,20 @@ fn parse_func_def(code: &str) -> Option<ParseResult> {
     if par.is_none() {
         return None;
     }
-    substr_start = par.unwrap().new_start;
+    substr_start += par.unwrap().new_start;
 
-    // '='
-    let eq = parse_word("=", code.split_at(substr_start).1);
+    // '->'
+    let eq = parse_word("->", code.split_at(substr_start).1);
     if eq.is_none() {
         return None;
     }
-    substr_start = eq.unwrap().new_start;
+    substr_start += eq.unwrap().new_start;
 
     let expr = parse_expr(code.split_at(substr_start).1);
     if expr.is_none() {
         return None;
     }
-    substr_start = expr.clone().unwrap().new_start;
+    substr_start += expr.clone().unwrap().new_start;
 
     Some(ParseResult {
         new_start: substr_start,
@@ -171,7 +172,56 @@ fn parse_func_def(code: &str) -> Option<ParseResult> {
 
 // <asgn> ::= 'let' <ident> ':=' <expr>
 fn parse_asgn(code: &str) -> Option<ParseResult> {
-    None
+    let mut substr_start;
+
+    // 'let'
+    let keyword = parse_word("let", code);
+    if keyword.is_none() {
+        return None;
+    }
+    substr_start = keyword.unwrap().new_start;
+
+    let name = parse_ident(code.split_at(substr_start).1);
+    if name.is_none() {
+        return None;
+    }
+    substr_start += name.clone().unwrap().new_start;
+    let name_str = if let Token::Identifier(try_name_str) = name.unwrap().token {
+        try_name_str
+    } else {
+        String::new()
+    };
+
+    // '='
+    let eq = parse_word("=", code.split_at(substr_start).1);
+    if eq.is_none() {
+        return None;
+    }
+    substr_start += eq.unwrap().new_start;
+
+    let expr = parse_expr(code.split_at(substr_start).1);
+    if expr.is_none() {
+        return None;
+    }
+    substr_start += expr.clone().unwrap().new_start;
+
+    Some(ParseResult {
+        new_start: substr_start,
+        token: Token::Assignment(
+            name_str.clone(), Box::new(expr.unwrap().token)
+        )
+    })
+}
+
+fn parse_whitespace(code: &str) -> ParseResult {
+    let mut i = 0;
+    while i < code.len() && code.chars().nth(i).unwrap().is_whitespace() {
+        i += 1;
+    }
+    ParseResult {
+        new_start: i,
+        token: Token::Whitespace
+    }
 }
 
 // <expr> ::= <exp> | '(' <expr> ')'
@@ -192,6 +242,8 @@ pub fn parse_word(word: &str, code: &str) -> Option<ParseResult> {
             }
             i += 1;
         }
+        let skip_ws = parse_whitespace(code.split_at(i).1);
+        i += skip_ws.new_start;
         Some(ParseResult {
             new_start: i,
             token: Token::Word(String::from(word))
@@ -229,6 +281,8 @@ pub fn parse_integer(code: &str) -> Option<ParseResult> {
     if int_str.len() < 2 || !int_str.ends_with('_') {
         None
     } else {
+        let skip_ws = parse_whitespace(code.split_at(i).1);
+        i += skip_ws.new_start;
         Some(ParseResult {
             new_start: i,
             token: Token::Integer(int_str.clone())
@@ -291,6 +345,8 @@ pub fn parse_number(code: &str) -> Option<ParseResult> {
     }
 
     if float_str.len() > 0 || float_str.chars().nth(0).unwrap() != '-' {
+        let skip_ws = parse_whitespace(code.split_at(i).1);
+        i += skip_ws.new_start;
         Some(ParseResult {
             new_start: i,
             token: Token::Number(float_str.clone())
@@ -320,6 +376,8 @@ pub fn parse_ident(code: &str) -> Option<ParseResult> {
     }
 
     if ident_str.len() > 0 {
+        let skip_ws = parse_whitespace(code.split_at(i).1);
+        i += skip_ws.new_start;
         Some(ParseResult {
             new_start: i,
             token: Token::Identifier(ident_str.clone())
