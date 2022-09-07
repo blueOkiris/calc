@@ -18,11 +18,10 @@
  * <list>           ::= '[' [ <term> { ',' <term> } ] ']'
  * <func-call>      ::= <ident> '(' [ <expr> { ',' <expr> } ] ')'
  * <ident>          ::= /[A-Za-z_]+[A-Za-z_0-9]* /
- * <float>          ::= /\-?([0-9]+\.)?[0-9]+([Ee]\-?[0-9]+)?/
- * <int>            ::= /[0-9]+_/
+ * <float>          ::= /\-?([0-9]*\.)?[0-9]+([Ee]\-?[0-9]+)?/
+ * <int>            ::= /-[0-9]+_/
  */
 
-#[derive(Debug, Clone)]
 pub enum Token {
     Statement(Box<Token>),
     FunctionDefinition(String, Vec<String>, Box<Token>),
@@ -45,10 +44,14 @@ pub struct ParseResult {
 
 /* A series of helper functions for the parser */
 
-// <int> ::= /[0-9][0-9_]*_/
+// <int> ::= /-?[0-9][0-9_]*_/
 pub fn retrieve_integer(code: &str) -> Option<ParseResult> {
     let mut int_str = String::new();
     let mut i = 0;
+    if code.len() > 0 && code.chars().nth(0).unwrap() == '-' {
+        int_str.push('-');
+        i = 1;
+    }
     while i < code.len() && (
         char::is_digit(code.chars().nth(i).unwrap(), 10) || code.chars().nth(i).unwrap() == '_'
     ) {
