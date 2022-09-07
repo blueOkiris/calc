@@ -18,7 +18,7 @@
  * <sum>            ::= <term> | <term> ( '+' | '-' ) <term>
  * <term>           ::= <ident> | <func-call> | <float> | <int>
  *                    | 'j' <term> | '-' <term> | <list>
- * <list>           ::= '[' [ <term> { ',' <term> } ] ']'
+ * <list>           ::= '[' [ <expr> { ',' <expr> } ] ']'
  * <func-call>      ::= <ident> '(' [ <expr> { ',' <expr> } ] ')'
  * <ident>          ::= /[A-Za-z_]+[A-Za-z_0-9]* /
  * <float>          ::= /\-?([0-9]*\.)?[0-9]+([Ee]\-?[0-9]+)?/
@@ -114,15 +114,15 @@ fn parse_func_def(code: &str) -> Option<ParseResult> {
     let try_arg = parse_ident(code.split_at(substr_start).1);
     if try_arg.is_some() {
         substr_start += try_arg.clone().unwrap().new_start;
-        args.push(if let Token::Identifier(try_arg_str) = try_arg.unwrap().token {
-            try_arg_str
-        } else {
-            String::new()
-        });
+        args.push(
+            if let Token::Identifier(try_arg_str) = try_arg.unwrap().token {
+                try_arg_str
+            } else {
+                String::new()
+            }
+        );
 
         loop {
-            
-
             let comma = parse_word(",", code.split_at(substr_start).1);
             if comma.is_none() {
                 break;
@@ -134,11 +134,13 @@ fn parse_func_def(code: &str) -> Option<ParseResult> {
                 return None;
             }
             substr_start += arg.clone().unwrap().new_start;
-            args.push(if let Token::Identifier(arg_str) = arg.unwrap().token {
-                arg_str
-            } else {
-                String::new()
-            });
+            args.push(
+                if let Token::Identifier(arg_str) = arg.unwrap().token {
+                    arg_str
+                } else {
+                    String::new()
+                }
+            );
         }
     }
 
@@ -251,6 +253,51 @@ pub fn parse_word(word: &str, code: &str) -> Option<ParseResult> {
     } else {
         None        
     }
+}
+
+// TODO: Test this!
+// <list> ::= '[' [ <expr> { ',' <expr> } ] ']'
+fn parse_list(code: &str) -> Option<ParseResult> {
+    let mut items = Vec::new();
+    let mut substr_start;
+
+    let brack = parse_word("[", code);
+    if brack.is_none() {
+        return None;
+    }
+    substr_start = brack.unwrap().new_start;
+
+    let first_item = parse_expr(code.split_at(substr_start).1);
+    if first_item.is_some() {
+        items.push(Box::new(first_item.clone().unwrap().token));
+        substr_start += first_item.unwrap().new_start;
+
+        loop {
+            let comma = parse_word(",", code.split_at(substr_start).1);
+            if comma.is_none() {
+                break;
+            }
+            substr_start += comma.unwrap().new_start;
+
+            let item = parse_expr(code.split_at(substr_start).1);
+            if item.is_none() {
+                return None;
+            }
+            items.push(Box::new(item.clone().unwrap().token));
+            substr_start += item.unwrap().new_start;
+        }
+    }
+
+    let brack = parse_word("]", code.split_at(substr_start).1);
+    if brack.is_none() {
+        return None;
+    }
+    substr_start += brack.unwrap().new_start;
+
+    Some(ParseResult {
+        new_start: substr_start,
+        token: Token::List(items)
+    })
 }
 
 // <int> ::= /-?[0-9][0-9_]*_/
