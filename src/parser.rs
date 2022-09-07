@@ -39,6 +39,7 @@ pub enum Token {
     Number(String),
     Integer(String),
     List(Vec<Box<Token>>),
+    FunctionCall(String, Vec<Box<Token>>),
     Word(String),
     Whitespace
 }
@@ -214,6 +215,11 @@ fn parse_asgn(code: &str) -> Option<ParseResult> {
         )
     })
 }
+
+// <term> ::= <ident> | <func-call> | <float> | <int> | 'j' <term> | '-' <term> | <list>
+/*fn parse_term(code: &str) -> Option<ParseResult> {
+
+}*/
 
 fn parse_whitespace(code: &str) -> ParseResult {
     let mut i = 0;
