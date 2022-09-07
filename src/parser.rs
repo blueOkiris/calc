@@ -1,6 +1,9 @@
 /*
  * Author: Dylan Turner
- * Description: Take string/repl input and turn it into an AST
+ * Description:
+ * - Take string/repl input and turn it into an AST
+ * - In order to let tests.rs access some functions, there are a few helpers that are public, but
+ *   in use, just parse_stmt is used
  */
 
 /*
@@ -34,7 +37,8 @@ pub enum Token {
     Identifier(String),
     Number(String),
     Integer(String),
-    List(Vec<Box<Token>>)
+    List(Vec<Box<Token>>),
+    Word(String)
 }
 
 pub struct ParseResult {
@@ -75,8 +79,22 @@ fn parse_expr(code: &str) -> Option<ParseResult> {
 }
 
 // Get a specified string of characters
-fn parse_word(word: &str, code: &str) -> Option<ParseResult> {
-    None
+pub fn parse_word(word: &str, code: &str) -> Option<ParseResult> {
+    if word.len() < code.len() {
+        let mut i = 0;
+        while i < word.len() {
+            if word.chars().nth(i).unwrap() != code.chars().nth(i).unwrap() {
+                return None;
+            }
+            i += 1;
+        }
+        Some(ParseResult {
+            new_start: i,
+            token: Token::Word(String::from(word))
+        })
+    } else {
+        None        
+    }
 }
 
 // <int> ::= /-?[0-9][0-9_]*_/
