@@ -25,7 +25,7 @@ I needed it to support basic floating point math but also scientific options, in
 
 Run `cargo build --release`. The executable '%' will be located in the created target/release/ folder.
 
-From there, you can either get the result of a single expression via `% <expr>` or enter a REPL by just typing `%`.
+From there, you can either get the result of a single expression via `c <expr>` or enter a REPL by just typing `c`.
 
 
 
