@@ -21,11 +21,14 @@ use termion::{
 };
 use crate::{
     parser::parse_stmt,
-    args::cli_args
+    args::cli_args,
+    eval::{
+        eval, Environment
+    }
 };
 
 fn main() {
-    // let mut env - TODO: Interpreter environment implementation
+    let mut env = Environment::new();
     let args = cli_args();
     if args.is_present("stmts") {
         let lines = args.value_of("stmts").unwrap().split('\n').collect::<Vec<&str>>();
@@ -33,14 +36,10 @@ fn main() {
             let stmt = parse_stmt(line);
             match stmt {
                 Err(err) => println!("Error: {}", err),
-                Ok(ast) => {
-                    println!("Parsed {:?}", ast.token);
-                    // TODO: Immediately evaluate
-                }
+                Ok(ast) => println!("{}", eval(&ast, &mut env))
             }
         }
     } else {
-        // TODO: Enter REPL
         let mut out = stdout();
 
         writeln!(
@@ -64,11 +63,8 @@ fn main() {
 
             let stmt = parse_stmt(line.as_str());
             match stmt {
-                Err(err) => println!("Error: {}", err),
-                Ok(ast) => {
-                    println!("Parsed {:?}", ast.token);
-                    // TODO: Immediately evaluate
-                }
+                Err(err) => writeln!(out, "Error: {}", err).unwrap(),
+                Ok(ast) => writeln!(out, "{}", eval(&ast, &mut env)).unwrap()
             }
         }
     }
