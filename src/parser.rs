@@ -44,14 +44,14 @@ pub enum Token {
     Whitespace
 }
 
+// Could use error, could use just Option<Token> and modify end val, but I think this is the best
 #[derive(Clone)]
 pub struct ParseResult {
     pub new_start: usize,
     pub token: Token
 }
 
-/* A series of helper functions for the parser */
-
+// Primary parsing function:
 // <stmt> ::= <asgn> | <func-def> | <expr>
 pub fn parse_stmt(code: &str) -> Option<ParseResult> {
     let attempt = parse_func_def(code);
@@ -80,6 +80,8 @@ pub fn parse_stmt(code: &str) -> Option<ParseResult> {
         None
     }
 }
+
+/* Helpers for each statement */
 
 // <func-def> ::= '\' <ident> '(' [ <ident> { ',' <ident> } ] ')' '=' <expr>
 fn parse_func_def(code: &str) -> Option<ParseResult> {
@@ -216,50 +218,27 @@ fn parse_asgn(code: &str) -> Option<ParseResult> {
     })
 }
 
-// <term> ::= <ident> | <func-call> | <float> | <int> | 'j' <term> | '-' <term> | <list>
-/*fn parse_term(code: &str) -> Option<ParseResult> {
-
-}*/
-
-fn parse_whitespace(code: &str) -> ParseResult {
-    let mut i = 0;
-    while i < code.len() && code.chars().nth(i).unwrap().is_whitespace() {
-        i += 1;
-    }
-    ParseResult {
-        new_start: i,
-        token: Token::Whitespace
-    }
-}
+/* Expression Parser */
 
 // <expr> ::= <exp> | '(' <expr> ')'
 fn parse_expr(code: &str) -> Option<ParseResult> {
+    // TODO: Remove and implement. Just for ide help (tells nvim that these are used)
+    parse_integer(code);
+    parse_list(code);
+    parse_number(code);
+
     Some(ParseResult {
         new_start: code.len(),
         token: Token::Identifier(String::from("TEMP"))
     })
 }
 
-// Get a specified string of characters
-pub fn parse_word(word: &str, code: &str) -> Option<ParseResult> {
-    if word.len() < code.len() {
-        let mut i = 0;
-        while i < word.len() {
-            if word.chars().nth(i).unwrap() != code.chars().nth(i).unwrap() {
-                return None;
-            }
-            i += 1;
-        }
-        let skip_ws = parse_whitespace(code.split_at(i).1);
-        i += skip_ws.new_start;
-        Some(ParseResult {
-            new_start: i,
-            token: Token::Word(String::from(word))
-        })
-    } else {
-        None        
-    }
-}
+// <term> ::= <ident> | <func-call> | <float> | <int> | 'j' <term> | '-' <term> | <list>
+/*fn parse_term(code: &str) -> Option<ParseResult> {
+
+}*/
+
+/* Complex terms (i.e. uses base terms, but not quite into actual expr building yet) */
 
 // TODO: Test this!
 // <list> ::= '[' [ <expr> { ',' <expr> } ] ']'
@@ -305,6 +284,8 @@ fn parse_list(code: &str) -> Option<ParseResult> {
         token: Token::List(items)
     })
 }
+
+/* Fundamental, underlying data types */
 
 // <int> ::= /-?[0-9][0-9_]*_/
 pub fn parse_integer(code: &str) -> Option<ParseResult> {
@@ -437,6 +418,40 @@ pub fn parse_ident(code: &str) -> Option<ParseResult> {
         })
     } else {
         None    
+    }
+}
+
+/* True helper functions */
+
+// Get a specified string of characters
+pub fn parse_word(word: &str, code: &str) -> Option<ParseResult> {
+    if word.len() < code.len() {
+        let mut i = 0;
+        while i < word.len() {
+            if word.chars().nth(i).unwrap() != code.chars().nth(i).unwrap() {
+                return None;
+            }
+            i += 1;
+        }
+        let skip_ws = parse_whitespace(code.split_at(i).1);
+        i += skip_ws.new_start;
+        Some(ParseResult {
+            new_start: i,
+            token: Token::Word(String::from(word))
+        })
+    } else {
+        None        
+    }
+}
+
+fn parse_whitespace(code: &str) -> ParseResult {
+    let mut i = 0;
+    while i < code.len() && code.chars().nth(i).unwrap().is_whitespace() {
+        i += 1;
+    }
+    ParseResult {
+        new_start: i,
+        token: Token::Whitespace
     }
 }
 
