@@ -182,6 +182,33 @@ fn eval_expr(ast: &Token, env: &Environment) -> Result<Var, String> {
                 }
                 Ok(left_val.unwrap().do_cmp(right_val.unwrap(), op.clone().unwrap().as_str()))
             }
+        }, Token::Term(inner) => eval_expr(inner, env),
+        Token::Integer(text) => {
+            match BigInt::from_str(text) {
+                Err(_) => Err(format!("Failed to parse integer {}", text)),
+                Ok(val) => {
+                    Ok(Var {
+                        ls_data: None,
+                        real_num_data: None,
+                        lat_num_data: None,
+                        real_int_data: Some(val),
+                        lat_int_data: None
+                    })
+                }
+            }
+        }, Token::Number(text) => {
+            match BigDecimal::from_str(text) {
+                Err(_) => Err(format!("Failed to parse number {}", text)),
+                Ok(val) => {
+                    Ok(Var {
+                        ls_data: None,
+                        real_num_data: Some(val),
+                        lat_num_data: None,
+                        real_int_data: None,
+                        lat_int_data: None
+                    })
+                }
+            }
         }, _ => Err(String::from("Impossible!"))
     }
 }
