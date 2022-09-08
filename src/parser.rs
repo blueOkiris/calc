@@ -556,7 +556,7 @@ fn parse_list(code: &str, pos: usize) -> Option<ParseResult> {
             substr_start += comma.unwrap().new_start;
 
             let item = parse_expr(code.split_at(substr_start).1, pos + substr_start);
-            if item.is_ok() {
+            if item.is_err() {
                 return None;
             }
             items.push(Box::new(item.clone().unwrap().token));
@@ -613,7 +613,7 @@ fn parse_func_call(code: &str, pos: usize) -> Option<ParseResult> {
             substr_start += comma.unwrap().new_start;
 
             let arg = parse_expr(code.split_at(substr_start).1, pos + substr_start);
-            if arg.is_ok() {
+            if arg.is_err() {
                 return None;
             }
             args.push(Box::new(arg.clone().unwrap().token));
