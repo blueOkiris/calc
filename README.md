@@ -38,6 +38,7 @@ Each line in the REPL or passed in directly can be one of three things:
   
   ```
   $ c
+  CLI Calculator v1. Enter 'q' or press Ctrl-C to exit
   > \inc(x)->x+1
   > 3+inc(x)
   4
@@ -49,6 +50,7 @@ Each line in the REPL or passed in directly can be one of three things:
 
   ```
   $ c
+  CLI Calculator v1. Enter 'q' or press Ctrl-C to exit
   > let x := 7
   > x-3
   4
