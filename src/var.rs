@@ -6,7 +6,7 @@
  * - Real/Complex and Int/Float/List
  */
 
-use bigdecimal::{BigDecimal, Zero};
+use bigdecimal::{BigDecimal, Zero, ToPrimitive};
 use num::BigInt;
 use std::{
     str::FromStr,
@@ -269,3 +269,40 @@ impl Add for Var {
     }
 }
 
+impl Sub for Var {
+    type Output = Self;
+    fn sub(self, other: Self) -> Self {
+        self.do_op(other, |a, b| a - b, |a, b| a - b)
+    }
+}
+
+impl Mul for Var {
+    type Output = Self;
+    fn mul(self, other: Self) -> Self {
+        self.do_op(other, |a, b| a * b, |a, b| a * b)
+    }
+}
+
+impl Div for Var {
+    type Output = Self;
+    fn div(self, other: Self) -> Self {
+        self.do_op(other, |a, b| a / b, |a, b| a / b)
+    }
+}
+
+// NOTE: Not xor but power
+impl BitXor for Var {
+    type Output = Self;
+    fn bitxor(self, other: Self) -> Self {
+        self.do_op(
+            other,
+            |a, b| {
+                let mut res = a.clone();
+                for _ in 0..b.to_u32().expect("Non-integer exponent or too-big exponent") {
+                    res *= a.clone();
+                }
+                res
+            }, |a, b| a.pow(b.to_u32().expect("Power too large."))
+        )
+    }
+}
