@@ -56,21 +56,29 @@ pub struct ParseResult {
 
 // Primary parsing function:
 // <stmt> ::= <asgn> | <func-def> | <expr>
-pub fn parse_stmt(code: &str) -> Result<ParseResult, String> {
+pub fn parse_stmt(code: &str) -> Result<Token, String> {
     let attempt = parse_func_def(code);
     if attempt.is_some() {
-        return Ok(ParseResult {
-            new_start: attempt.clone().unwrap().new_start,
-            token: Token::Statement(Box::new(attempt.unwrap().token))
-        });
+        if attempt.clone().unwrap().new_start < code.len() {
+            return Err(format!(
+                "Extra characters at end of expression starting at {}",
+                attempt.unwrap().new_start
+            ))
+        } else {
+            return Ok(Token::Statement(Box::new(attempt.unwrap().token)));
+        }
     }
     
     let attempt = parse_asgn(code);
     if attempt.is_some() {
-        return Ok(ParseResult {
-            new_start: attempt.clone().unwrap().new_start,
-            token: Token::Statement(Box::new(attempt.unwrap().token))
-        })
+        if attempt.clone().unwrap().new_start < code.len() {
+            return Err(format!(
+                "Extra characters at end of expression starting at {}",
+                attempt.unwrap().new_start
+            ))
+        } else {
+            return Ok(Token::Statement(Box::new(attempt.unwrap().token)));
+        }
     }
 
     match parse_expr(code, 0) {
@@ -78,10 +86,7 @@ pub fn parse_stmt(code: &str) -> Result<ParseResult, String> {
         Ok(expr) => if expr.new_start < code.len() {
             Err(format!("Extra characters at end of expression starting at {}", expr.new_start))
         } else {
-            Ok(ParseResult {
-                new_start: expr.new_start,
-                token: Token::Statement(Box::new(expr.token))
-            })    
+            Ok(Token::Statement(Box::new(expr.token)))
         }
     }
 }
