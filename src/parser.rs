@@ -526,7 +526,6 @@ fn parse_term(code: &str) -> Option<ParseResult> {
 
 /* Complex terms (i.e. uses base terms, but not quite into actual expr building yet) */
 
-// TODO: Test this! Requires expr
 // <list> ::= '[' [ <expr> { ',' <expr> } ] ']'
 fn parse_list(code: &str) -> Option<ParseResult> {
     let mut items = Vec::new();
@@ -571,7 +570,6 @@ fn parse_list(code: &str) -> Option<ParseResult> {
     })
 }
 
-// TODO: Test this! Requires expr
 // <func-call> ::= <ident> '(' [ <expr> { ',' <expr> } ] ')'
 fn parse_func_call(code: &str) -> Option<ParseResult> {
     let mut substr_start;
@@ -632,7 +630,7 @@ fn parse_func_call(code: &str) -> Option<ParseResult> {
 /* Fundamental, underlying data types */
 
 // <int> ::= /-?[0-9][0-9_]*_/
-pub fn parse_integer(code: &str) -> Option<ParseResult> {
+fn parse_integer(code: &str) -> Option<ParseResult> {
     let mut int_str = String::new();
     let mut i = 0;
 
@@ -663,7 +661,7 @@ pub fn parse_integer(code: &str) -> Option<ParseResult> {
 }
 
 // <float> ::= /\-?([0-9]*\.)?[0-9]+([Ee]\-?[0-9]+)?/
-pub fn parse_number(code: &str) -> Option<ParseResult> {
+fn parse_number(code: &str) -> Option<ParseResult> {
     let mut float_str = String::new();
     let mut i = 0;
     let mut found_pt = false;
@@ -723,7 +721,7 @@ pub fn parse_number(code: &str) -> Option<ParseResult> {
 }
 
 // <ident> ::= /[A-Za-z_]+[A-Za-z_0-9]*/
-pub fn parse_ident(code: &str) -> Option<ParseResult> {
+fn parse_ident(code: &str) -> Option<ParseResult> {
     let mut i = 0;
     let mut ident_str = String::new();
 
@@ -756,7 +754,7 @@ pub fn parse_ident(code: &str) -> Option<ParseResult> {
 /* True helper functions */
 
 // Get a specified string of characters
-pub fn parse_word(word: &str, code: &str) -> Option<ParseResult> {
+fn parse_word(word: &str, code: &str) -> Option<ParseResult> {
     if word.len() < code.len() {
         let mut i = 0;
         while i < word.len() {
