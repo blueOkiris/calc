@@ -4,8 +4,9 @@
  */
 
 mod parser;
-mod tests;
+mod eval;
 mod args;
+mod tests;
 
 use std::{
     process::exit,
@@ -30,8 +31,13 @@ fn main() {
         let lines = args.value_of("stmts").unwrap().split('\n').collect::<Vec<&str>>();
         for line in lines {
             let stmt = parse_stmt(line);
-            println!("Parsed {:?}", stmt.unwrap().token);
-            // TODO: Immediately evaluate
+            match stmt {
+                Err(err) => println!("Error: {}", err),
+                Ok(ast) => {
+                    println!("Parsed {:?}", ast.token);
+                    // TODO: Immediately evaluate
+                }
+            }
         }
     } else {
         // TODO: Enter REPL
@@ -57,8 +63,13 @@ fn main() {
             }
 
             let stmt = parse_stmt(line.as_str());
-            writeln!(out, "Parsed {:?}", stmt.unwrap().token).unwrap();
-            // TODO: Immediately evaluate
+            match stmt {
+                Err(err) => println!("Error: {}", err),
+                Ok(ast) => {
+                    println!("Parsed {:?}", ast.token);
+                    // TODO: Immediately evaluate
+                }
+            }
         }
     }
 }
