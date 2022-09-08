@@ -4,6 +4,7 @@
  */
 
 mod parser;
+mod var;
 mod eval;
 mod args;
 mod tests;
