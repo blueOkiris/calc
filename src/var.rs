@@ -6,7 +6,7 @@
  * - Real/Complex and Int/Float/List
  */
 
-use bigdecimal::{BigDecimal, Zero, ToPrimitive};
+use bigdecimal::{BigDecimal, Zero, ToPrimitive, FromPrimitive};
 use num::BigInt;
 use std::{
     str::FromStr,
@@ -139,6 +139,78 @@ impl Var {
         }
         
         new_self
+    }
+
+    pub fn do_cmp(self, other: Self, op: &str) -> Self {
+        match op {
+            "==" => self.do_op(
+                other,
+                |a, b| if a == b {
+                    BigDecimal::from_i8(-1).unwrap()
+                } else {
+                    BigDecimal::zero()
+                }, |a, b| if a == b {
+                    BigInt::from_i8(-1).unwrap()
+                } else {
+                    BigInt::zero()
+                }
+            ), "=/=" => self.do_op(
+                other,
+                |a, b| if a != b {
+                    BigDecimal::from_i8(-1).unwrap()
+                } else {
+                    BigDecimal::zero()
+                }, |a, b| if a != b {
+                    BigInt::from_i8(-1).unwrap()
+                } else {
+                    BigInt::zero()
+                }
+            ), ">" => self.do_op(
+                other,
+                |a, b| if a > b {
+                    BigDecimal::from_i8(-1).unwrap()
+                } else {
+                    BigDecimal::zero()
+                }, |a, b| if a > b {
+                    BigInt::from_i8(-1).unwrap()
+                } else {
+                    BigInt::zero()
+                }
+            ), "<" => self.do_op(
+                other,
+                |a, b| if a < b {
+                    BigDecimal::from_i8(-1).unwrap()
+                } else {
+                    BigDecimal::zero()
+                }, |a, b| if a < b {
+                    BigInt::from_i8(-1).unwrap()
+                } else {
+                    BigInt::zero()
+                }
+            ), ">=" => self.do_op(
+                other,
+                |a, b| if a >= b {
+                    BigDecimal::from_i8(-1).unwrap()
+                } else {
+                    BigDecimal::zero()
+                }, |a, b| if a >= b {
+                    BigInt::from_i8(-1).unwrap()
+                } else {
+                    BigInt::zero()
+                }
+            ), "<=" => self.do_op(
+                other,
+                |a, b| if a <= b {
+                    BigDecimal::from_i8(-1).unwrap()
+                } else {
+                    BigDecimal::zero()
+                }, |a, b| if a <= b {
+                    BigInt::from_i8(-1).unwrap()
+                } else {
+                    BigInt::zero()
+                }
+            ), _ => Self::impossible()
+        }
     }
 
     // Basically dec_op/int_op are +, -, etc, but this way I can reuse code
@@ -306,3 +378,4 @@ impl BitXor for Var {
         )
     }
 }
+
