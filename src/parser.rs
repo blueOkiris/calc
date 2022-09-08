@@ -223,14 +223,76 @@ fn parse_asgn(code: &str) -> Option<ParseResult> {
 
 /* Expressionession Parser */
 
-// <expr> ::= <exp> | '(' <expr> ')' | 'j' <expr> | '-' <expr>
+// <expr> ::= <un-expr> | '(' <expr> ')'
 fn parse_expr(code: &str) -> Option<ParseResult> {
-    // TODO: Remove and implement. Just for ide help (tells nvim that these are used)
-    parse_exp_expr(code);
+    // Check for parenth
+    let par = parse_word("(", code);
+    if par.is_some() {
+        // '(' <expr> ')'
+        let mut substr_start = par.unwrap().new_start;
+        
+        let sub_expr = parse_expr(code.split_at(substr_start).1);
+        if sub_expr.is_none() {
+            return None;
+        }
+        substr_start += sub_expr.clone().unwrap().new_start;
 
-    Some(ParseResult {
-        new_start: code.len(),
-        token: Token::Identifier(String::from("TEMP"))
+        let par = parse_word(")", code.split_at(substr_start).1);
+        if par.is_none() {
+            None
+        } else {
+            Some(ParseResult {
+                new_start: par.unwrap().new_start,
+                token: Token::Expression(Box::new(sub_expr.unwrap().token))
+            })
+        }
+    } else {
+        let unary = parse_un_expr(code);
+        if unary.is_none() {
+            None
+        } else {
+            Some(ParseResult {
+                new_start: unary.clone().unwrap().new_start,
+                token: Token::Expression(Box::new(unary.unwrap().token))
+            })
+        }
+    }
+}
+
+// <un-expr> ::= <exp-expr> | 'j' <exp-expr> | '-' <exp-expr>
+fn parse_un_expr(code: &str) -> Option<ParseResult> {
+    let mut substr_start = 0;
+
+    let ops = [ "j", "-" ];
+    let mut atmpt = None;
+    let mut used_op = "";
+    for op in ops {
+        atmpt = parse_word(op, code);
+        if atmpt.is_some() {
+            used_op = op;
+            break;
+        }
+    }
+    if atmpt.is_some() {
+        substr_start = atmpt.clone().unwrap().new_start;
+    }
+
+    let exp = parse_exp_expr(code.split_at(substr_start).1);
+    if exp.is_none() {
+        return None;
+    }
+    substr_start += exp.clone().unwrap().new_start;
+
+    return Some(ParseResult {
+        new_start: substr_start,
+        token: Token::UnaryExpression(
+            Box::new(exp.unwrap().token),
+            if atmpt.is_some() {
+                Some(String::from(used_op))
+            } else {
+                None
+            }
+        )
     })
 }
 
