@@ -5,6 +5,8 @@
 
 #[cfg(test)]
 
+use bigdecimal::BigDecimal;
+use std::str::FromStr;
 use crate::parser::{
     //parse_integer, // Not public anymore
     //parse_number, // Not pub
@@ -54,5 +56,10 @@ pub fn parse_stmts() {
 
     assert!(parse_stmt("\\sum(x, y) -> x + y").is_some());
     assert!(parse_stmt("let x = 500").is_some());
+}
+
+#[test]
+pub fn big_dec_test() {
+    assert_eq!(BigDecimal::from_str("1E12"), BigDecimal::from_str("1000000000000"));
 }
 
