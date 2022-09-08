@@ -215,6 +215,22 @@ fn eval_expr(ast: &Token, env: &Environment) -> Result<Var, String> {
             } else {
                 Err(format!("No such variable '{}'", name))
             }
+        }, Token::List(items) => {
+            let mut var_arr = Vec::new();
+            for item in items {
+                let res = eval_expr(item, env);
+                if res.is_err() {
+                    return res;
+                }
+                var_arr.push(res.unwrap());
+            }
+            Ok(Var {
+                ls_data: Some(var_arr),
+                real_num_data: None,
+                lat_num_data: None,
+                real_int_data: None,
+                lat_int_data: None
+            })
         } _ => Err(String::from("Impossible!"))
     }
 }
