@@ -34,8 +34,8 @@ pub enum Token {
     Expression(Box<Token>),
     UnaryExpression(Box<Token>, Option<char>),
     ExponentialExpression(Box<Token>, Option<Box<Token>>),
-    ProductExpression(Box<Token>, Option<char>, Option<Box<Token>>),
-    SumExpression(Box<Token>, Option<char>, Option<Box<Token>>),
+    ProductExpression(Box<Token>, Option<String>, Option<Box<Token>>),
+    SumExpression(Box<Token>, Option<String>, Option<Box<Token>>),
     RelationalExpression(Box<Token>, Option<String>, Option<Box<Token>>),
     Term(Box<Token>),
     Identifier(String),
@@ -226,11 +226,59 @@ fn parse_asgn(code: &str) -> Option<ParseResult> {
 // <expr> ::= <exp> | '(' <expr> ')' | 'j' <expr> | '-' <expr>
 fn parse_expr(code: &str) -> Option<ParseResult> {
     // TODO: Remove and implement. Just for ide help (tells nvim that these are used)
-    parse_rel_expr(code);
+    parse_sum_expr(code);
 
     Some(ParseResult {
         new_start: code.len(),
         token: Token::Identifier(String::from("TEMP"))
+    })
+}
+
+// <sum-expr> ::= <rel-expr> [ ( '+' | '-' ) <rel-expr> ]
+fn parse_sum_expr(code: &str) -> Option<ParseResult> {
+    let mut substr_start;
+
+    let fst = parse_rel_expr(code);
+    if fst.is_none() {
+        return None;
+    }
+    substr_start = fst.clone().unwrap().new_start;
+
+    let ops = [ "+", "-" ];
+    let mut atmpt = None;
+    let mut used_op = "";
+    for op in ops {
+        atmpt = parse_word(op, code.split_at(substr_start).1);
+        if atmpt.is_some() {
+            used_op = op;
+            break;
+        }
+    }
+    if atmpt.is_none() {
+        return Some(ParseResult {
+            new_start: fst.clone().unwrap().new_start,
+            token: Token::SumExpression(Box::new(fst.unwrap().token), None, None)
+        });
+    }
+    substr_start += atmpt.unwrap().new_start;
+
+    // We found the operator, let's get the next token
+    let snd = parse_term(code.split_at(substr_start).1);
+    if snd.is_none() {
+        return Some(ParseResult {
+            new_start: fst.clone().unwrap().new_start,
+            token: Token::SumExpression(Box::new(fst.unwrap().token), None, None)
+        });
+    }
+    substr_start += snd.clone().unwrap().new_start;
+
+    return Some(ParseResult {
+        new_start: substr_start,
+        token: Token::SumExpression(
+            Box::new(fst.unwrap().token),
+            Some(String::from(used_op)),
+            Some(Box::new(snd.unwrap().token))
+        )
     })
 }
 
