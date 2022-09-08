@@ -209,7 +209,13 @@ fn eval_expr(ast: &Token, env: &Environment) -> Result<Var, String> {
                     })
                 }
             }
-        }, _ => Err(String::from("Impossible!"))
+        }, Token::Identifier(name) => {
+            if env.vars.contains_key(name) {
+                Ok(env.vars[&name.clone()].clone())
+            } else {
+                Err(format!("No such variable '{}'", name))
+            }
+        } _ => Err(String::from("Impossible!"))
     }
 }
 
