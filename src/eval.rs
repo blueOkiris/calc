@@ -24,7 +24,38 @@ pub struct Var {
 // Mainly the base functions 
 impl Var {
     pub fn to_string(&self) -> String {
-        String::from("Not implemented")
+        let mut repr = String::new();
+        if self.ls_data.is_none() {
+            if self.real_num_data.is_some() {
+                repr.push_str(self.real_num_data.clone().unwrap().to_string().as_str());
+            } else if self.real_int_data.is_some() {
+                repr.push_str(self.real_int_data.clone().unwrap().to_string().as_str());
+            }
+            if self.lat_num_data.is_some() {
+                if repr.len() > 0 {
+                    repr.push('+');
+                }
+                repr.push('j');
+                repr.push_str(self.lat_num_data.clone().unwrap().to_string().as_str());
+            } else {
+                if repr.len() > 0 {
+                    repr.push('+');
+                }
+                repr.push('j');
+                repr.push_str(self.lat_int_data.clone().unwrap().to_string().as_str());
+            }
+        } else {
+            repr.push_str("[ ");
+            for var in self.ls_data.clone().unwrap() {
+                repr.push_str(var.to_string().as_str());
+                repr.push(' ');
+            }
+            repr.push(']');
+        }
+        if repr.len() < 1 {
+            repr = String::from("IMPOSSIBLE DATA ACHIEVED")
+        }
+        repr
     }
 
     pub fn impossible() -> Self {
