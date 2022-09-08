@@ -32,7 +32,7 @@ pub enum Token {
     FunctionDefinition(String, Vec<String>, Box<Token>),
     Assignment(String, Box<Token>),
     Expression(Box<Token>),
-    UnaryExpression(Box<Token>, Option<char>),
+    UnaryExpression(Box<Token>, Option<String>),
     ExponentialExpression(Box<Token>, Option<Box<Token>>),
     ProductExpression(Box<Token>, Option<String>, Option<Box<Token>>),
     SumExpression(Box<Token>, Option<String>, Option<Box<Token>>),
@@ -226,11 +226,49 @@ fn parse_asgn(code: &str) -> Option<ParseResult> {
 // <expr> ::= <exp> | '(' <expr> ')' | 'j' <expr> | '-' <expr>
 fn parse_expr(code: &str) -> Option<ParseResult> {
     // TODO: Remove and implement. Just for ide help (tells nvim that these are used)
-    parse_prod_expr(code);
+    parse_exp_expr(code);
 
     Some(ParseResult {
         new_start: code.len(),
         token: Token::Identifier(String::from("TEMP"))
+    })
+}
+
+// <exp-expr> ::= <prod-expr> [ '^' <prod-expr> ]
+fn parse_exp_expr(code: &str) -> Option<ParseResult> {
+    let mut substr_start;
+
+    let fst = parse_prod_expr(code);
+    if fst.is_none() {
+        return None;
+    }
+    substr_start = fst.clone().unwrap().new_start;
+
+    let atmpt = parse_word("^", code.split_at(substr_start).1);
+    if atmpt.is_none() {
+        return Some(ParseResult {
+            new_start: fst.clone().unwrap().new_start,
+            token: Token::ExponentialExpression(Box::new(fst.unwrap().token), None)
+        });
+    }
+    substr_start += atmpt.unwrap().new_start;
+
+    // We found the operator, let's get the next token
+    let snd = parse_prod_expr(code.split_at(substr_start).1);
+    if snd.is_none() {
+        return Some(ParseResult {
+            new_start: fst.clone().unwrap().new_start,
+            token: Token::ExponentialExpression(Box::new(fst.unwrap().token), None)
+        });
+    }
+    substr_start += snd.clone().unwrap().new_start;
+
+    return Some(ParseResult {
+        new_start: substr_start,
+        token: Token::ExponentialExpression(
+            Box::new(fst.unwrap().token),
+            Some(Box::new(snd.unwrap().token))
+        )
     })
 }
 
