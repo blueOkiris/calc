@@ -17,7 +17,7 @@
  * <exp-expr>       ::= <prod-expr> [ '^' <prod-expr> ]
  * <prod-expr>      ::= <sum-expr> [ ( '*' | '/' ) <sum-expr> ]
  * <sum-expr>       ::= <rel-expr> [ ( '+' | '-' ) <rel-expr> ]
- * <rel-expr>       ::= <term> [ ('==' | '=/=' | '>' | '<' | '>=' | '<=' ) <term> ]
+ * <rel-expr>       ::= <term> [ ('=' | '=/=' | '>' | '<' | '>=' | '<=' ) <term> ]
  * <term>           ::= <ident> | <float> | <int> | <list> | <func-call>
  * <list>           ::= '[' [ <expr> { ',' <expr> } ] ']'
  * <func-call>      ::= <ident> '(' [ <expr> { ',' <expr> } ] ')'
@@ -36,7 +36,7 @@ pub enum Token {
     ExponentialExpression(Box<Token>, Option<Box<Token>>),
     ProductExpression(Box<Token>, Option<char>, Option<Box<Token>>),
     SumExpression(Box<Token>, Option<char>, Option<Box<Token>>),
-    RelationalExpression(Box<Token>, Option<char>, Option<Box<Token>>),
+    RelationalExpression(Box<Token>, Option<String>, Option<Box<Token>>),
     Term(Box<Token>),
     Identifier(String),
     Number(String),
@@ -226,11 +226,60 @@ fn parse_asgn(code: &str) -> Option<ParseResult> {
 // <expr> ::= <exp> | '(' <expr> ')' | 'j' <expr> | '-' <expr>
 fn parse_expr(code: &str) -> Option<ParseResult> {
     // TODO: Remove and implement. Just for ide help (tells nvim that these are used)
-    parse_term(code);
+    parse_rel_expr(code);
 
     Some(ParseResult {
         new_start: code.len(),
         token: Token::Identifier(String::from("TEMP"))
+    })
+}
+
+// <rel-expr> ::= <term> [ ('=' | '=/=' | '>' | '<' | '>=' | '<=' ) <term> ]
+fn parse_rel_expr(code: &str) -> Option<ParseResult> {
+    let mut substr_start;
+
+    let first = parse_term(code);
+    if first.is_none() {
+        return None;
+    }
+    substr_start = first.clone().unwrap().new_start;
+
+    // Optional '==', '=/=', '>', ...
+    let ops = [ "==", "=/=", ">", "<", ">=", "<=" ];
+    let mut atmpt = None;
+    let mut used_op = "";
+    for op in ops {
+        atmpt = parse_word(op, code.split_at(substr_start).1);
+        if atmpt.is_some() {
+            used_op = op;
+            break;
+        }
+    }
+    if atmpt.is_none() {
+        return Some(ParseResult {
+            new_start: first.clone().unwrap().new_start,
+            token: Token::RelationalExpression(Box::new(first.unwrap().token), None, None)
+        });
+    }
+    substr_start += atmpt.unwrap().new_start;
+
+    // We found the operator, let's get the next token
+    let snd = parse_term(code.split_at(substr_start).1);
+    if snd.is_none() {
+        return Some(ParseResult {
+            new_start: first.clone().unwrap().new_start,
+            token: Token::RelationalExpression(Box::new(first.unwrap().token), None, None)
+        });
+    }
+    substr_start += snd.clone().unwrap().new_start;
+
+    return Some(ParseResult {
+        new_start: substr_start,
+        token: Token::RelationalExpression(
+            Box::new(first.unwrap().token),
+            Some(String::from(used_op)),
+            Some(Box::new(snd.unwrap().token))
+        )
     })
 }
 
