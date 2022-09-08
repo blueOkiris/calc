@@ -12,17 +12,18 @@
  * <stmt>           ::= <expr> | <func-def> | <asgn>
  * <func-def>       ::= '\' <ident> '(' [ <ident> { ',' <ident> } ] ')' '->' <expr>
  * <asgn>           ::= 'let' <ident> ':=' <expr>
- * <expr>           ::= <exp> | '(' <expr> ')'
- * <exp>            ::= <product> | <product> '^' <product>
- * <product>        ::= <sum> | <sum> ( '*' | '/' ) <sum>
- * <sum>            ::= <term> | <term> ( '+' | '-' ) <term>
- * <term>           ::= <ident> | <func-call> | <float> | <int>
- *                    | 'j' <term> | '-' <term> | <list>
+ * <expr>           ::= <un-expr> | '(' <expr> ')'
+ * <un-expr>        ::= <exp-expr> | 'j' <exp-expr> | '-' <exp-expr>
+ * <exp-expr>       ::= <prod-expr> [ '^' <prod-expr> ]
+ * <prod-expr>      ::= <sum-expr> [ ( '*' | '/' ) <sum-expr> ]
+ * <sum-expr>       ::= <rel-expr> [ ( '+' | '-' ) <rel-expr> ]
+ * <rel-expr>       ::= <term> [ ('==' | '=/=' | '>' | '<' | '>=' | '<=' ) <term> ]
+ * <term>           ::= <ident> | <float> | <int> | <list> | <func-call>
  * <list>           ::= '[' [ <expr> { ',' <expr> } ] ']'
  * <func-call>      ::= <ident> '(' [ <expr> { ',' <expr> } ] ')'
  * <ident>          ::= /[A-Za-z_]+[A-Za-z_0-9]* /
- * <float>          ::= /\-?([0-9]*\.)?[0-9]+([Ee]\-?[0-9]+)?/
- * <int>            ::= /-[0-9]+_/
+ * <float>          ::= /([0-9]*\.)?[0-9]+([Ee]\-?[0-9]+)?/
+ * <int>            ::= /[0-9]+_/
  */
 
 #[derive(Clone, Debug)]
@@ -30,11 +31,13 @@ pub enum Token {
     Statement(Box<Token>),
     FunctionDefinition(String, Vec<String>, Box<Token>),
     Assignment(String, Box<Token>),
-    Expr(Box<Token>),
-    Exp(Box<Token>, Option<Box<Token>>),
-    Product(Box<Token>, Option<char>, Option<Box<Token>>),
-    Factor(Box<Token>, Option<char>, Option<Box<Token>>),
-    Term(Box<Token>, Option<char>),
+    Expression(Box<Token>),
+    UnaryExpression(Box<Token>, Option<char>),
+    ExponentialExpression(Box<Token>, Option<Box<Token>>),
+    ProductExpression(Box<Token>, Option<char>, Option<Box<Token>>),
+    SumExpression(Box<Token>, Option<char>, Option<Box<Token>>),
+    RelationalExpression(Box<Token>, Option<char>, Option<Box<Token>>),
+    Term(Box<Token>),
     Identifier(String),
     Number(String),
     Integer(String),
@@ -218,9 +221,9 @@ fn parse_asgn(code: &str) -> Option<ParseResult> {
     })
 }
 
-/* Expression Parser */
+/* Expressionession Parser */
 
-// <expr> ::= <exp> | '(' <expr> ')'
+// <expr> ::= <exp> | '(' <expr> ')' | 'j' <expr> | '-' <expr>
 fn parse_expr(code: &str) -> Option<ParseResult> {
     // TODO: Remove and implement. Just for ide help (tells nvim that these are used)
     parse_integer(code);
@@ -310,7 +313,7 @@ fn parse_func_call(code: &str) -> Option<ParseResult> {
     }
     substr_start += par.unwrap().new_start;
 
-    // Expr list
+    // Expression list
     let first_arg = parse_expr(code.split_at(substr_start).1);
     if first_arg.is_some() {
         args.push(Box::new(first_arg.clone().unwrap().token));
@@ -351,12 +354,6 @@ pub fn parse_integer(code: &str) -> Option<ParseResult> {
     let mut int_str = String::new();
     let mut i = 0;
 
-    // Check for negative num
-    if code.len() > 0 && code.chars().nth(0).unwrap() == '-' {
-        int_str.push('-');
-        i = 1;
-    }
-
     // Get 0-9+, but allow inner '_' for breaking up big numbers
     while i < code.len() && (
         code.chars().nth(i).unwrap().is_digit(10) || code.chars().nth(i).unwrap() == '_'
@@ -388,12 +385,6 @@ pub fn parse_number(code: &str) -> Option<ParseResult> {
     let mut float_str = String::new();
     let mut i = 0;
     let mut found_pt = false;
-
-    // Like int, check for negative
-    if code.len() > 0 && code.chars().nth(0).unwrap() == '-' {
-        float_str.push('-');
-        i = 1;
-    }
 
     // Get 0-9+ and 0-9+.0-9+
     while i < code.len() && (
@@ -437,7 +428,7 @@ pub fn parse_number(code: &str) -> Option<ParseResult> {
         }
     }
 
-    if float_str.len() > 0 || float_str.chars().nth(0).unwrap() != '-' {
+    if float_str.len() > 0 {
         let skip_ws = parse_whitespace(code.split_at(i).1);
         i += skip_ws.new_start;
         Some(ParseResult {
