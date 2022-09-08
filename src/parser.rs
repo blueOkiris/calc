@@ -12,13 +12,13 @@
  * <stmt>           ::= <expr> | <func-def> | <asgn>
  * <func-def>       ::= '\' <ident> '(' [ <ident> { ',' <ident> } ] ')' '->' <expr>
  * <asgn>           ::= 'let' <ident> ':=' <expr>
- * <expr>           ::= <un-expr> | '(' <expr> ')'
+ * <expr>           ::= <un-expr> // This is dumb lol
  * <un-expr>        ::= <exp-expr> | 'j' <exp-expr> | '-' <exp-expr>
  * <exp-expr>       ::= <prod-expr> [ '^' <prod-expr> ]
  * <prod-expr>      ::= <sum-expr> [ ( '*' | '/' ) <sum-expr> ]
  * <sum-expr>       ::= <rel-expr> [ ( '+' | '-' ) <rel-expr> ]
  * <rel-expr>       ::= <term> [ ('=' | '=/=' | '>' | '<' | '>=' | '<=' ) <term> ]
- * <term>           ::= <ident> | <float> | <int> | <list> | <func-call>
+ * <term>           ::= <ident> | <float> | <int> | <list> | <func-call> | '(' <expr> ')'
  * <list>           ::= '[' [ <expr> { ',' <expr> } ] ']'
  * <func-call>      ::= <ident> '(' [ <expr> { ',' <expr> } ] ')'
  * <ident>          ::= /[A-Za-z_]+[A-Za-z_0-9]* /
@@ -225,38 +225,15 @@ fn parse_asgn(code: &str) -> Option<ParseResult> {
 
 /* Expressionession Parser */
 
-// <expr> ::= <un-expr> | '(' <expr> ')'
+// <expr> ::= <un-expr>
 fn parse_expr(code: &str, pos: usize) -> Result<ParseResult, String> {
-    // Check for parenth
-    let par = parse_word("(", code);
-    if par.is_some() {
-        // '(' <expr> ')'
-        let mut substr_start = par.unwrap().new_start;
-        
-        let sub_expr = parse_expr(code.split_at(substr_start).1, pos + substr_start);
-        if sub_expr.is_err() {
-            return Err(sub_expr.err().unwrap());
-        }
-        substr_start += sub_expr.clone().unwrap().new_start;
-
-        let par = parse_word(")", code.split_at(substr_start).1);
-        if par.is_none() {
-            Err(format!("Missing ')' at pos {}", substr_start + pos))
-        } else {
-            Ok(ParseResult {
-                new_start: par.unwrap().new_start,
-                token: Token::Expression(Box::new(sub_expr.unwrap().token))
-            })
-        }
-    } else {
-        let unary = parse_un_expr(code, pos);
-        match unary {
-            Err(err) => Err(err),
-            Ok(unary_res) => Ok(ParseResult {
-                new_start: unary_res.new_start,
-                token: Token::Expression(Box::new(unary_res.token))
-            })
-        }
+    let unary = parse_un_expr(code, pos);
+    match unary {
+        Err(err) => Err(err),
+        Ok(unary_res) => Ok(ParseResult {
+            new_start: unary_res.new_start,
+            token: Token::Expression(Box::new(unary_res.token))
+        })
     }
 }
 
@@ -318,7 +295,7 @@ fn parse_exp_expr(code: &str, pos: usize) -> Result<ParseResult, String> {
 
     // We found the operator, let's get the next token
     let snd = parse_prod_expr(code.split_at(substr_start).1, pos + substr_start);
-    if snd.is_ok() {
+    if snd.is_err() {
         return Ok(ParseResult {
             new_start: fst.clone().unwrap().new_start,
             token: Token::ExponentialExpression(Box::new(fst.unwrap().token), None)
@@ -480,8 +457,31 @@ fn parse_rel_expr(code: &str, pos: usize) -> Result<ParseResult, String> {
     })
 }
 
-// <term> ::= <ident> | <float> | <int> | <list> | <func-call>
+// <term> ::= <ident> | <float> | <int> | <list> | <func-call> | '(' <expr> ')'
 fn parse_term(code: &str, pos: usize) -> Result<ParseResult, String> {
+    // Check for parenth
+    let par = parse_word("(", code);
+    if par.is_some() {
+        // '(' <expr> ')'
+        let mut substr_start = par.unwrap().new_start;
+        
+        let sub_expr = parse_expr(code.split_at(substr_start).1, pos + substr_start);
+        if sub_expr.is_err() {
+            return Err(sub_expr.err().unwrap());
+        }
+        substr_start += sub_expr.clone().unwrap().new_start;
+
+        let par = parse_word(")", code.split_at(substr_start).1);
+        if par.is_none() {
+            return Err(format!("Missing ')' at pos {}", substr_start + pos));
+        } else {
+           return Ok(ParseResult {
+                new_start: substr_start + par.unwrap().new_start,
+                token: Token::Term(Box::new(sub_expr.unwrap().token))
+            });
+        }
+    }
+
     let atmpt = parse_list(code, pos);
     if atmpt.is_some() {
         return Ok(ParseResult {
@@ -756,7 +756,7 @@ fn parse_ident(code: &str) -> Option<ParseResult> {
 
 // Get a specified string of characters
 fn parse_word(word: &str, code: &str) -> Option<ParseResult> {
-    if word.len() < code.len() {
+    if word.len() <= code.len() {
         let mut i = 0;
         while i < word.len() {
             if word.chars().nth(i).unwrap() != code.chars().nth(i).unwrap() {
