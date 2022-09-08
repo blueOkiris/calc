@@ -292,9 +292,15 @@ impl Var {
 
                 Var {
                     ls_data: None,
-                    real_num_data: Some(real),
-                    lat_num_data: Some(lat),
-                    real_int_data: None,
+                    real_num_data: if real.is_zero() {
+                        None
+                    } else {
+                        Some(real)
+                    }, lat_num_data: if lat.is_zero() {
+                        None
+                    } else {
+                        Some(lat)
+                    }, real_int_data: None,
                     lat_int_data: None
                 }
             } else {
@@ -326,10 +332,17 @@ impl Var {
                     ls_data: None,
                     real_num_data: None,
                     lat_num_data: None,
-                    real_int_data: Some(real),
-                    lat_int_data: Some(lat)
-                } 
-            }    
+                    real_int_data: if real.is_zero() {
+                        None
+                    } else {
+                        Some(real)
+                    }, lat_int_data: if lat.is_zero() {
+                        None
+                    } else {
+                        Some(lat)        
+                    } 
+                }    
+            }
         }
     }
 }
