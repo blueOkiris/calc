@@ -226,6 +226,7 @@ fn parse_expr(code: &str) -> Option<ParseResult> {
     parse_integer(code);
     parse_list(code);
     parse_number(code);
+    parse_func_call(code);
 
     Some(ParseResult {
         new_start: code.len(),
@@ -240,7 +241,7 @@ fn parse_expr(code: &str) -> Option<ParseResult> {
 
 /* Complex terms (i.e. uses base terms, but not quite into actual expr building yet) */
 
-// TODO: Test this!
+// TODO: Test this! Requires expr
 // <list> ::= '[' [ <expr> { ',' <expr> } ] ']'
 fn parse_list(code: &str) -> Option<ParseResult> {
     let mut items = Vec::new();
@@ -282,6 +283,64 @@ fn parse_list(code: &str) -> Option<ParseResult> {
     Some(ParseResult {
         new_start: substr_start,
         token: Token::List(items)
+    })
+}
+
+// TODO: Test this! Requires expr
+// <func-call> ::= <ident> '(' [ <expr> { ',' <expr> } ] ')'
+fn parse_func_call(code: &str) -> Option<ParseResult> {
+    let mut substr_start;
+    let mut args = Vec::new();
+
+    let fname = parse_ident(code);
+    if fname.is_none() {
+        return None;
+    }
+    substr_start = fname.clone().unwrap().new_start;
+    let fname_str = if let Token::Identifier(try_fname_str) = fname.unwrap().token {
+        try_fname_str
+    } else {
+        String::new()
+    };
+
+    // '('
+    let par = parse_word("(", code.split_at(substr_start).1);
+    if par.is_none() {
+        return None;
+    }
+    substr_start += par.unwrap().new_start;
+
+    // Expr list
+    let first_arg = parse_expr(code.split_at(substr_start).1);
+    if first_arg.is_some() {
+        args.push(Box::new(first_arg.clone().unwrap().token));
+        substr_start += first_arg.unwrap().new_start;
+
+        loop {
+            let comma = parse_word(",", code.split_at(substr_start).1);
+            if comma.is_none() {
+                break;
+            }
+            substr_start += comma.unwrap().new_start;
+
+            let arg = parse_expr(code.split_at(substr_start).1);
+            if arg.is_none() {
+                return None;
+            }
+            args.push(Box::new(arg.clone().unwrap().token));
+            substr_start += arg.unwrap().new_start;
+        }
+    }
+    
+    let par = parse_word(")", code.split_at(substr_start).1);
+    if par.is_none() {
+        return None;
+    }
+    substr_start += par.unwrap().new_start;
+
+    Some(ParseResult {
+        new_start: substr_start,
+        token: Token::FunctionCall(fname_str, args)
     })
 }
 
