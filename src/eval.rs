@@ -21,10 +21,66 @@ pub struct Var {
     pub lat_int_data: Option<BigInt>
 }
 
+// Mainly the base functions 
 impl Var {
     pub fn to_string(&self) -> String {
         String::from("Not implemented")
     }
+
+    pub fn impossible() -> Self {
+        Self {
+            ls_data: None,
+            real_num_data: None,
+            lat_num_data: None,
+            real_int_data: None,
+            lat_int_data: None
+        }
+    }
+
+    pub fn to_lat(&self) -> Self {
+        let mut new_self = self.clone();
+
+        if new_self.real_num_data.is_some() {
+            new_self.lat_num_data = new_self.real_num_data;
+            new_self.real_num_data = None;
+        } else if new_self.real_int_data.is_some() {
+            new_self.lat_int_data = new_self.real_int_data;
+            new_self.real_int_data = None;
+        } else if new_self.ls_data.is_some() {
+            let mut new_ls = Vec::new();
+            let ls = new_self.ls_data.unwrap();
+            for var in ls {
+                new_ls.push(var.to_lat());
+            }
+            new_self.ls_data = Some(new_ls);
+        }
+        
+        new_self
+    }
+
+    pub fn to_neg(&self) -> Self {
+        let mut new_self = self.clone();
+
+        if new_self.real_num_data.is_some() {
+            new_self.real_num_data = Some(-new_self.real_num_data.unwrap());
+        } else if new_self.real_int_data.is_some() {
+            new_self.real_int_data = Some(-new_self.real_int_data.unwrap());
+        } else if new_self.lat_num_data.is_some() {
+            new_self.lat_num_data = Some(-new_self.lat_num_data.unwrap());
+        } else if new_self.lat_int_data.is_some() {
+            new_self.lat_int_data = Some(-new_self.lat_int_data.unwrap());
+        } else if new_self.ls_data.is_some() {
+            let mut new_ls = Vec::new();
+            let ls = new_self.ls_data.unwrap();
+            for var in ls {
+                new_ls.push(var.to_neg());
+            }
+            new_self.ls_data = Some(new_ls);
+        }
+        
+        new_self
+    }
+
 }
 
 #[derive(Clone, Debug)]
@@ -100,12 +156,19 @@ fn eval_asgn(name: &String, sub_expr: &Token, env: &mut Environment) -> String {
 
 // Meat and bones - actually calculate stuff
 fn eval_expr(ast: &Token, env: &Environment) -> Var {
-    Var {
-        ls_data: None,
-        real_int_data: None,
-        lat_int_data: None,
-        real_num_data: None,
-        lat_num_data: None
+    match ast {
+        Token::Expression(un) => eval_expr(un, env),
+        Token::UnaryExpression(exp, op) => {
+            if op.is_none() {
+                eval_expr(exp, env)
+            } else {
+                match op.clone().unwrap().as_str() {
+                    "j" => eval_expr(exp, env).to_lat(),
+                    "-" => eval_expr(exp, env).to_neg(),
+                    _ => Var::impossible()
+                }
+            }
+        }, _ => Var::impossible()
     }
 }
 
