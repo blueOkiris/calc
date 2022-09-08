@@ -168,6 +168,20 @@ fn eval_expr(ast: &Token, env: &Environment) -> Result<Var, String> {
                     _ => Err(String::from("Impossible!"))
                 }
             }
+        }, Token::RelationalExpression(left, op, right) => {
+            if right.is_none() {
+                eval_expr(left, env)
+            } else {
+                let left_val = eval_expr(left, env);
+                if left_val.is_err() {
+                    return left_val;
+                }
+                let right_val = eval_expr(right.clone().unwrap().as_ref(), env);
+                if right_val.is_err() {
+                    return right_val;
+                }
+                Ok(left_val.unwrap().do_cmp(right_val.unwrap(), op.clone().unwrap().as_str()))
+            }
         }, _ => Err(String::from("Impossible!"))
     }
 }
