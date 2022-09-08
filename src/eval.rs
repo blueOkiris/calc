@@ -231,7 +231,26 @@ fn eval_expr(ast: &Token, env: &Environment) -> Result<Var, String> {
                 real_int_data: None,
                 lat_int_data: None
             })
-        } _ => Err(String::from("Impossible!"))
+        }, Token::FunctionCall(name, args) => {
+            if env.funcs.contains_key(name) {
+                let mut eval_args = Vec::new();
+                for arg in args {
+                    match eval_expr(arg, env) {
+                        Err(err) => return Err(err),
+                        Ok(val) => eval_args.push(val)
+                    }
+                }
+                let mut f_env = env.clone();
+                for i in 0..env.funcs[&name.clone()].args.len() {
+                    f_env.vars.insert(
+                        env.funcs[&name.clone()].args[i].clone(), eval_args[i].clone()
+                    );
+                }
+                eval_expr(&env.funcs[&name.clone()].expr, &f_env)
+            } else {
+                Err(format!("No such function '{}'", name))
+            }
+        }, _ => Err(String::from("Impossible!"))
     }
 }
 
