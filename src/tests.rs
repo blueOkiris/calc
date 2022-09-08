@@ -54,8 +54,8 @@ pub fn parse_stmts() {
     println!("Assignment: {:?}", parse_stmt("\\sum(x, y) -> x + y").unwrap().token);
     println!("Assignment: {:?}", parse_stmt("let x = 500").unwrap().token);
 
-    assert!(parse_stmt("\\sum(x, y) -> x + y").is_some());
-    assert!(parse_stmt("let x = 500").is_some());
+    assert!(parse_stmt("\\sum(x, y) -> x + y").is_ok());
+    assert!(parse_stmt("let x = 500").is_ok());
 }
 
 #[test]
