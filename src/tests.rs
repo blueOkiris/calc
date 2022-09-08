@@ -51,8 +51,8 @@ pub fn parse_words() {
 #[test]
 pub fn parse_stmts() {
     // Debug print (call `cargo test -- --nocapture`)
-    println!("Assignment: {:?}", parse_stmt("\\sum(x, y) -> x + y").unwrap().token);
-    println!("Assignment: {:?}", parse_stmt("let x = 500").unwrap().token);
+    println!("Assignment: {:?}", parse_stmt("\\sum(x, y) -> x + y").unwrap());
+    println!("Assignment: {:?}", parse_stmt("let x = 500").unwrap());
 
     assert!(parse_stmt("\\sum(x, y) -> x + y").is_ok());
     assert!(parse_stmt("let x = 500").is_ok());
