@@ -215,20 +215,22 @@ impl Var {
 
     // Basically dec_op/int_op are +, -, etc, but this way I can reuse code
     pub fn do_op<
-        DF: Fn(BigDecimal, BigDecimal) -> BigDecimal,
-        IF: Fn(BigInt, BigInt) -> BigInt
+        DF: FnOnce(BigDecimal, BigDecimal) -> BigDecimal + Copy,
+        IF: FnOnce(BigInt, BigInt) -> BigInt + Copy
     >(self, other: Self, dec_op: DF, int_op: IF) -> Self {
         // Check for lists
         if self.ls_data.is_some() && other.ls_data.is_some() {
             // Both are lists, so do a matrix multiplication
-            let mut cur = self.ls_data.clone().unwrap();
-            for var in cur.iter_mut() {
+            let mut new_ls = Vec::new();
+            for var in self.ls_data.clone().unwrap() {
+                let mut folded = var.clone();
                 for other_var in other.ls_data.clone().unwrap() {
-                    *var = var.clone() + other_var;
+                    folded = folded.do_op(other_var.clone(), dec_op, int_op);
                 }
+                new_ls.push(folded);
             }
             Var {
-                ls_data: Some(cur),
+                ls_data: Some(new_ls),
                 real_num_data: None,
                 lat_num_data: None,
                 real_int_data: None,
@@ -238,7 +240,7 @@ impl Var {
             // One is list, so do the operation to with other to every item
             let mut cur = self.ls_data.clone().unwrap();
             for var in cur.iter_mut() {
-                *var = var.clone() + other.clone();
+                *var = var.clone().do_op(other.clone(), dec_op, int_op);
             }
             Var {
                 ls_data: Some(cur),
@@ -251,7 +253,7 @@ impl Var {
             // One is list, so do the operation to with other to every item
             let mut cur = other.ls_data.clone().unwrap();
             for var in cur.iter_mut() {
-                *var = var.clone() + self.clone();
+                *var = var.clone().do_op(self.clone(), dec_op, int_op);
             }
             Var {
                 ls_data: Some(cur),
