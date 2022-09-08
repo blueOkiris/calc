@@ -257,7 +257,7 @@ fn parse_prod_expr(code: &str) -> Option<ParseResult> {
     if atmpt.is_none() {
         return Some(ParseResult {
             new_start: fst.clone().unwrap().new_start,
-            token: Token::SumExpression(Box::new(fst.unwrap().token), None, None)
+            token: Token::ProductExpression(Box::new(fst.unwrap().token), None, None)
         });
     }
     substr_start += atmpt.unwrap().new_start;
@@ -267,14 +267,14 @@ fn parse_prod_expr(code: &str) -> Option<ParseResult> {
     if snd.is_none() {
         return Some(ParseResult {
             new_start: fst.clone().unwrap().new_start,
-            token: Token::SumExpression(Box::new(fst.unwrap().token), None, None)
+            token: Token::ProductExpression(Box::new(fst.unwrap().token), None, None)
         });
     }
     substr_start += snd.clone().unwrap().new_start;
 
     return Some(ParseResult {
         new_start: substr_start,
-        token: Token::SumExpression(
+        token: Token::ProductExpression(
             Box::new(fst.unwrap().token),
             Some(String::from(used_op)),
             Some(Box::new(snd.unwrap().token))
