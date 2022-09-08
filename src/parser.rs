@@ -56,10 +56,10 @@ pub struct ParseResult {
 
 // Primary parsing function:
 // <stmt> ::= <asgn> | <func-def> | <expr>
-pub fn parse_stmt(code: &str) -> Option<ParseResult> {
+pub fn parse_stmt(code: &str) -> Result<ParseResult, String> {
     let attempt = parse_func_def(code);
     if attempt.is_some() {
-        return Some(ParseResult {
+        return Ok(ParseResult {
             new_start: attempt.clone().unwrap().new_start,
             token: Token::Statement(Box::new(attempt.unwrap().token))
         });
@@ -67,20 +67,22 @@ pub fn parse_stmt(code: &str) -> Option<ParseResult> {
     
     let attempt = parse_asgn(code);
     if attempt.is_some() {
-        return Some(ParseResult {
+        return Ok(ParseResult {
             new_start: attempt.clone().unwrap().new_start,
             token: Token::Statement(Box::new(attempt.unwrap().token))
         })
     }
 
-    let attempt = parse_expr(code);
-    if attempt.is_some() {
-        Some(ParseResult {
-            new_start: attempt.clone().unwrap().new_start,
-            token: Token::Statement(Box::new(attempt.unwrap().token))
-        })
-    } else {
-        None
+    match parse_expr(code, 0) {
+        Err(err) => Err(err),
+        Ok(expr) => if expr.new_start < code.len() {
+            Err(format!("Extra characters at end of expression starting at {}", expr.new_start))
+        } else {
+            Ok(ParseResult {
+                new_start: expr.new_start,
+                token: Token::Statement(Box::new(expr.token))
+            })    
+        }
     }
 }
 
@@ -164,8 +166,8 @@ fn parse_func_def(code: &str) -> Option<ParseResult> {
     }
     substr_start += eq.unwrap().new_start;
 
-    let expr = parse_expr(code.split_at(substr_start).1);
-    if expr.is_none() {
+    let expr = parse_expr(code.split_at(substr_start).1, substr_start);
+    if expr.is_err() {
         return None;
     }
     substr_start += expr.clone().unwrap().new_start;
@@ -207,8 +209,8 @@ fn parse_asgn(code: &str) -> Option<ParseResult> {
     }
     substr_start += eq.unwrap().new_start;
 
-    let expr = parse_expr(code.split_at(substr_start).1);
-    if expr.is_none() {
+    let expr = parse_expr(code.split_at(substr_start).1, substr_start);
+    if expr.is_err() {
         return None;
     }
     substr_start += expr.clone().unwrap().new_start;
@@ -224,43 +226,42 @@ fn parse_asgn(code: &str) -> Option<ParseResult> {
 /* Expressionession Parser */
 
 // <expr> ::= <un-expr> | '(' <expr> ')'
-fn parse_expr(code: &str) -> Option<ParseResult> {
+fn parse_expr(code: &str, pos: usize) -> Result<ParseResult, String> {
     // Check for parenth
     let par = parse_word("(", code);
     if par.is_some() {
         // '(' <expr> ')'
         let mut substr_start = par.unwrap().new_start;
         
-        let sub_expr = parse_expr(code.split_at(substr_start).1);
-        if sub_expr.is_none() {
-            return None;
+        let sub_expr = parse_expr(code.split_at(substr_start).1, pos + substr_start);
+        if sub_expr.is_err() {
+            return Err(sub_expr.err().unwrap());
         }
         substr_start += sub_expr.clone().unwrap().new_start;
 
         let par = parse_word(")", code.split_at(substr_start).1);
         if par.is_none() {
-            None
+            Err(format!("Missing ')' at pos {}", substr_start + pos))
         } else {
-            Some(ParseResult {
+            Ok(ParseResult {
                 new_start: par.unwrap().new_start,
                 token: Token::Expression(Box::new(sub_expr.unwrap().token))
             })
         }
     } else {
-        let unary = parse_un_expr(code);
-        if unary.is_none() {
-            None
-        } else {
-            Some(ParseResult {
-                new_start: unary.clone().unwrap().new_start,
-                token: Token::Expression(Box::new(unary.unwrap().token))
+        let unary = parse_un_expr(code, pos);
+        match unary {
+            Err(err) => Err(err),
+            Ok(unary_res) => Ok(ParseResult {
+                new_start: unary_res.new_start,
+                token: Token::Expression(Box::new(unary_res.token))
             })
         }
     }
 }
 
 // <un-expr> ::= <exp-expr> | 'j' <exp-expr> | '-' <exp-expr>
-fn parse_un_expr(code: &str) -> Option<ParseResult> {
+fn parse_un_expr(code: &str, pos: usize) -> Result<ParseResult, String> {
     let mut substr_start = 0;
 
     let ops = [ "j", "-" ];
@@ -277,13 +278,13 @@ fn parse_un_expr(code: &str) -> Option<ParseResult> {
         substr_start = atmpt.clone().unwrap().new_start;
     }
 
-    let exp = parse_exp_expr(code.split_at(substr_start).1);
-    if exp.is_none() {
-        return None;
+    let exp = parse_exp_expr(code.split_at(substr_start).1, pos + substr_start);
+    if exp.is_err() {
+        return Err(exp.err().unwrap());
     }
     substr_start += exp.clone().unwrap().new_start;
 
-    return Some(ParseResult {
+    return Ok(ParseResult {
         new_start: substr_start,
         token: Token::UnaryExpression(
             Box::new(exp.unwrap().token),
@@ -297,18 +298,18 @@ fn parse_un_expr(code: &str) -> Option<ParseResult> {
 }
 
 // <exp-expr> ::= <prod-expr> [ '^' <prod-expr> ]
-fn parse_exp_expr(code: &str) -> Option<ParseResult> {
+fn parse_exp_expr(code: &str, pos: usize) -> Result<ParseResult, String> {
     let mut substr_start;
 
-    let fst = parse_prod_expr(code);
-    if fst.is_none() {
-        return None;
+    let fst = parse_prod_expr(code, pos);
+    if fst.is_err() {
+        return Err(fst.err().unwrap());
     }
     substr_start = fst.clone().unwrap().new_start;
 
     let atmpt = parse_word("^", code.split_at(substr_start).1);
     if atmpt.is_none() {
-        return Some(ParseResult {
+        return Ok(ParseResult {
             new_start: fst.clone().unwrap().new_start,
             token: Token::ExponentialExpression(Box::new(fst.unwrap().token), None)
         });
@@ -316,16 +317,16 @@ fn parse_exp_expr(code: &str) -> Option<ParseResult> {
     substr_start += atmpt.unwrap().new_start;
 
     // We found the operator, let's get the next token
-    let snd = parse_prod_expr(code.split_at(substr_start).1);
-    if snd.is_none() {
-        return Some(ParseResult {
+    let snd = parse_prod_expr(code.split_at(substr_start).1, pos + substr_start);
+    if snd.is_ok() {
+        return Ok(ParseResult {
             new_start: fst.clone().unwrap().new_start,
             token: Token::ExponentialExpression(Box::new(fst.unwrap().token), None)
         });
     }
     substr_start += snd.clone().unwrap().new_start;
 
-    return Some(ParseResult {
+    return Ok(ParseResult {
         new_start: substr_start,
         token: Token::ExponentialExpression(
             Box::new(fst.unwrap().token),
@@ -335,12 +336,12 @@ fn parse_exp_expr(code: &str) -> Option<ParseResult> {
 }
 
 // <prod-expr> ::= <sum-expr> [ ( '*' | '/' ) <sum-expr> ]
-fn parse_prod_expr(code: &str) -> Option<ParseResult> {
+fn parse_prod_expr(code: &str, pos: usize) -> Result<ParseResult, String> {
     let mut substr_start;
 
-    let fst = parse_sum_expr(code);
-    if fst.is_none() {
-        return None;
+    let fst = parse_sum_expr(code, pos);
+    if fst.is_err() {
+        return Err(fst.err().unwrap());
     }
     substr_start = fst.clone().unwrap().new_start;
 
@@ -355,7 +356,7 @@ fn parse_prod_expr(code: &str) -> Option<ParseResult> {
         }
     }
     if atmpt.is_none() {
-        return Some(ParseResult {
+        return Ok(ParseResult {
             new_start: fst.clone().unwrap().new_start,
             token: Token::ProductExpression(Box::new(fst.unwrap().token), None, None)
         });
@@ -363,16 +364,16 @@ fn parse_prod_expr(code: &str) -> Option<ParseResult> {
     substr_start += atmpt.unwrap().new_start;
 
     // We found the operator, let's get the next token
-    let snd = parse_sum_expr(code.split_at(substr_start).1);
-    if snd.is_none() {
-        return Some(ParseResult {
+    let snd = parse_sum_expr(code.split_at(substr_start).1, pos + substr_start);
+    if snd.is_err() {
+        return Ok(ParseResult {
             new_start: fst.clone().unwrap().new_start,
             token: Token::ProductExpression(Box::new(fst.unwrap().token), None, None)
         });
     }
     substr_start += snd.clone().unwrap().new_start;
 
-    return Some(ParseResult {
+    return Ok(ParseResult {
         new_start: substr_start,
         token: Token::ProductExpression(
             Box::new(fst.unwrap().token),
@@ -383,12 +384,12 @@ fn parse_prod_expr(code: &str) -> Option<ParseResult> {
 }
 
 // <sum-expr> ::= <rel-expr> [ ( '+' | '-' ) <rel-expr> ]
-fn parse_sum_expr(code: &str) -> Option<ParseResult> {
+fn parse_sum_expr(code: &str, pos: usize) -> Result<ParseResult, String> {
     let mut substr_start;
 
-    let fst = parse_rel_expr(code);
-    if fst.is_none() {
-        return None;
+    let fst = parse_rel_expr(code, pos);
+    if fst.is_err() {
+        return Err(fst.err().unwrap());
     }
     substr_start = fst.clone().unwrap().new_start;
 
@@ -403,7 +404,7 @@ fn parse_sum_expr(code: &str) -> Option<ParseResult> {
         }
     }
     if atmpt.is_none() {
-        return Some(ParseResult {
+        return Ok(ParseResult {
             new_start: fst.clone().unwrap().new_start,
             token: Token::SumExpression(Box::new(fst.unwrap().token), None, None)
         });
@@ -411,16 +412,16 @@ fn parse_sum_expr(code: &str) -> Option<ParseResult> {
     substr_start += atmpt.unwrap().new_start;
 
     // We found the operator, let's get the next token
-    let snd = parse_rel_expr(code.split_at(substr_start).1);
-    if snd.is_none() {
-        return Some(ParseResult {
+    let snd = parse_rel_expr(code.split_at(substr_start).1, pos + substr_start);
+    if snd.is_err() {
+        return Ok(ParseResult {
             new_start: fst.clone().unwrap().new_start,
             token: Token::SumExpression(Box::new(fst.unwrap().token), None, None)
         });
     }
     substr_start += snd.clone().unwrap().new_start;
 
-    return Some(ParseResult {
+    return Ok(ParseResult {
         new_start: substr_start,
         token: Token::SumExpression(
             Box::new(fst.unwrap().token),
@@ -431,12 +432,12 @@ fn parse_sum_expr(code: &str) -> Option<ParseResult> {
 }
 
 // <rel-expr> ::= <term> [ ('=' | '=/=' | '>' | '<' | '>=' | '<=' ) <term> ]
-fn parse_rel_expr(code: &str) -> Option<ParseResult> {
+fn parse_rel_expr(code: &str, pos: usize) -> Result<ParseResult, String> {
     let mut substr_start;
 
-    let first = parse_term(code);
-    if first.is_none() {
-        return None;
+    let first = parse_term(code, pos);
+    if first.is_err() {
+        return Err(first.err().unwrap());
     }
     substr_start = first.clone().unwrap().new_start;
 
@@ -452,7 +453,7 @@ fn parse_rel_expr(code: &str) -> Option<ParseResult> {
         }
     }
     if atmpt.is_none() {
-        return Some(ParseResult {
+        return Ok(ParseResult {
             new_start: first.clone().unwrap().new_start,
             token: Token::RelationalExpression(Box::new(first.unwrap().token), None, None)
         });
@@ -460,16 +461,16 @@ fn parse_rel_expr(code: &str) -> Option<ParseResult> {
     substr_start += atmpt.unwrap().new_start;
 
     // We found the operator, let's get the next token
-    let snd = parse_term(code.split_at(substr_start).1);
-    if snd.is_none() {
-        return Some(ParseResult {
+    let snd = parse_term(code.split_at(substr_start).1, pos + substr_start);
+    if snd.is_err() {
+        return Ok(ParseResult {
             new_start: first.clone().unwrap().new_start,
             token: Token::RelationalExpression(Box::new(first.unwrap().token), None, None)
         });
     }
     substr_start += snd.clone().unwrap().new_start;
 
-    return Some(ParseResult {
+    return Ok(ParseResult {
         new_start: substr_start,
         token: Token::RelationalExpression(
             Box::new(first.unwrap().token),
@@ -480,18 +481,18 @@ fn parse_rel_expr(code: &str) -> Option<ParseResult> {
 }
 
 // <term> ::= <ident> | <float> | <int> | <list> | <func-call>
-fn parse_term(code: &str) -> Option<ParseResult> {
-    let atmpt = parse_list(code);
+fn parse_term(code: &str, pos: usize) -> Result<ParseResult, String> {
+    let atmpt = parse_list(code, pos);
     if atmpt.is_some() {
-        return Some(ParseResult {
+        return Ok(ParseResult {
             new_start: atmpt.clone().unwrap().new_start,
             token: Token::Term(Box::new(atmpt.unwrap().token))
         });
     }
 
-    let atmpt = parse_func_call(code);
+    let atmpt = parse_func_call(code, pos);
     if atmpt.is_some() {
-        return Some(ParseResult {
+        return Ok(ParseResult {
             new_start: atmpt.clone().unwrap().new_start,
             token: Token::Term(Box::new(atmpt.unwrap().token))
         });
@@ -499,7 +500,7 @@ fn parse_term(code: &str) -> Option<ParseResult> {
 
     let atmpt = parse_ident(code);
     if atmpt.is_some() {
-        return Some(ParseResult {
+        return Ok(ParseResult {
             new_start: atmpt.clone().unwrap().new_start,
             token: Token::Term(Box::new(atmpt.unwrap().token))
         });
@@ -507,7 +508,7 @@ fn parse_term(code: &str) -> Option<ParseResult> {
 
     let atmpt = parse_integer(code);
     if atmpt.is_some() {
-        return Some(ParseResult {
+        return Ok(ParseResult {
             new_start: atmpt.clone().unwrap().new_start,
             token: Token::Term(Box::new(atmpt.unwrap().token))
         });
@@ -515,19 +516,19 @@ fn parse_term(code: &str) -> Option<ParseResult> {
 
     let atmpt = parse_number(code);
     if atmpt.is_some() {
-        return Some(ParseResult {
+        return Ok(ParseResult {
             new_start: atmpt.clone().unwrap().new_start,
             token: Token::Term(Box::new(atmpt.unwrap().token))
         });
     }
 
-    None
+    Err(format!("Expected term at pos {}", pos))
 }
 
 /* Complex terms (i.e. uses base terms, but not quite into actual expr building yet) */
 
 // <list> ::= '[' [ <expr> { ',' <expr> } ] ']'
-fn parse_list(code: &str) -> Option<ParseResult> {
+fn parse_list(code: &str, pos: usize) -> Option<ParseResult> {
     let mut items = Vec::new();
     let mut substr_start;
 
@@ -537,8 +538,8 @@ fn parse_list(code: &str) -> Option<ParseResult> {
     }
     substr_start = brack.unwrap().new_start;
 
-    let first_item = parse_expr(code.split_at(substr_start).1);
-    if first_item.is_some() {
+    let first_item = parse_expr(code.split_at(substr_start).1, pos + substr_start);
+    if first_item.is_ok() {
         items.push(Box::new(first_item.clone().unwrap().token));
         substr_start += first_item.unwrap().new_start;
 
@@ -549,8 +550,8 @@ fn parse_list(code: &str) -> Option<ParseResult> {
             }
             substr_start += comma.unwrap().new_start;
 
-            let item = parse_expr(code.split_at(substr_start).1);
-            if item.is_none() {
+            let item = parse_expr(code.split_at(substr_start).1, pos + substr_start);
+            if item.is_ok() {
                 return None;
             }
             items.push(Box::new(item.clone().unwrap().token));
@@ -571,7 +572,7 @@ fn parse_list(code: &str) -> Option<ParseResult> {
 }
 
 // <func-call> ::= <ident> '(' [ <expr> { ',' <expr> } ] ')'
-fn parse_func_call(code: &str) -> Option<ParseResult> {
+fn parse_func_call(code: &str, pos: usize) -> Option<ParseResult> {
     let mut substr_start;
     let mut args = Vec::new();
 
@@ -594,8 +595,8 @@ fn parse_func_call(code: &str) -> Option<ParseResult> {
     substr_start += par.unwrap().new_start;
 
     // Expression list
-    let first_arg = parse_expr(code.split_at(substr_start).1);
-    if first_arg.is_some() {
+    let first_arg = parse_expr(code.split_at(substr_start).1, pos + substr_start);
+    if first_arg.is_ok() {
         args.push(Box::new(first_arg.clone().unwrap().token));
         substr_start += first_arg.unwrap().new_start;
 
@@ -606,8 +607,8 @@ fn parse_func_call(code: &str) -> Option<ParseResult> {
             }
             substr_start += comma.unwrap().new_start;
 
-            let arg = parse_expr(code.split_at(substr_start).1);
-            if arg.is_none() {
+            let arg = parse_expr(code.split_at(substr_start).1, pos + substr_start);
+            if arg.is_ok() {
                 return None;
             }
             args.push(Box::new(arg.clone().unwrap().token));
