@@ -226,10 +226,7 @@ fn parse_asgn(code: &str) -> Option<ParseResult> {
 // <expr> ::= <exp> | '(' <expr> ')' | 'j' <expr> | '-' <expr>
 fn parse_expr(code: &str) -> Option<ParseResult> {
     // TODO: Remove and implement. Just for ide help (tells nvim that these are used)
-    parse_integer(code);
-    parse_list(code);
-    parse_number(code);
-    parse_func_call(code);
+    parse_term(code);
 
     Some(ParseResult {
         new_start: code.len(),
@@ -237,10 +234,50 @@ fn parse_expr(code: &str) -> Option<ParseResult> {
     })
 }
 
-// <term> ::= <ident> | <func-call> | <float> | <int> | 'j' <term> | '-' <term> | <list>
-/*fn parse_term(code: &str) -> Option<ParseResult> {
+// <term> ::= <ident> | <float> | <int> | <list> | <func-call>
+fn parse_term(code: &str) -> Option<ParseResult> {
+    let atmpt = parse_list(code);
+    if atmpt.is_some() {
+        return Some(ParseResult {
+            new_start: atmpt.clone().unwrap().new_start,
+            token: Token::Term(Box::new(atmpt.unwrap().token))
+        });
+    }
 
-}*/
+    let atmpt = parse_func_call(code);
+    if atmpt.is_some() {
+        return Some(ParseResult {
+            new_start: atmpt.clone().unwrap().new_start,
+            token: Token::Term(Box::new(atmpt.unwrap().token))
+        });
+    }
+
+    let atmpt = parse_ident(code);
+    if atmpt.is_some() {
+        return Some(ParseResult {
+            new_start: atmpt.clone().unwrap().new_start,
+            token: Token::Term(Box::new(atmpt.unwrap().token))
+        });
+    }
+
+    let atmpt = parse_integer(code);
+    if atmpt.is_some() {
+        return Some(ParseResult {
+            new_start: atmpt.clone().unwrap().new_start,
+            token: Token::Term(Box::new(atmpt.unwrap().token))
+        });
+    }
+
+    let atmpt = parse_number(code);
+    if atmpt.is_some() {
+        return Some(ParseResult {
+            new_start: atmpt.clone().unwrap().new_start,
+            token: Token::Term(Box::new(atmpt.unwrap().token))
+        });
+    }
+
+    None
+}
 
 /* Complex terms (i.e. uses base terms, but not quite into actual expr building yet) */
 
