@@ -22,6 +22,20 @@ pub struct Var {
 }
 
 pub struct Environment {
-    pub vars: HashMap<String, Var>
+    pub vars: HashMap<String, Var>,
+    pub funcs: HashMap<String, Token>
+}
+
+impl Environment {
+    pub fn new() -> Self {
+        Self {
+            vars: HashMap::new(),
+            funcs: HashMap::new()
+        }
+    }
+}
+
+pub fn eval(ast: &Token, env: &mut Environment) -> String {
+    String::from("Not implemented")
 }
 
