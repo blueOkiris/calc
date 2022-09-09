@@ -21,7 +21,7 @@ There is some software which can provide such an experience, such as Maple for o
 
 ### Features
 
-I needed it to support basic floating point math but also scientific options, integer math, and complex numbers all while not slowing me down to use, so I've implemented the necessary tools to do that as well as extensibility via user defined functions which go in the `.config/calc/init` file.
+I needed it to support basic floating point math but also scientific options, integer math, and complex numbers all while not slowing me down to use, so I've implemented the necessary tools to do that as well as extensibility via persistent user defined functions and variables which go in the `.config/calc/init` file.
 
 ## Usage
 
@@ -45,7 +45,7 @@ Each line in the REPL or passed in directly can be one of three things:
   >
   ```
   
-  As noted before, you can store these custom functions as lines inside the `.config/calc`
+  As noted before, you can store these custom functions as lines inside the `.config/calc/init`
 3. A variable assignment, e.g:
 
   ```
@@ -56,6 +56,8 @@ Each line in the REPL or passed in directly can be one of three things:
   4
   >
   ```
+
+  These can also be placed into `.config/calc/init`
 
 ### Data Types
 
