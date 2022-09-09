@@ -33,9 +33,9 @@ Probably doesn't work on Windows, but the Windows terminal isn't worth using, so
 
 ## Usage
 
-Run `cargo build --release`. The executable '%' will be located in the created target/release/ folder.
+Assuming you've installed it correctly, a program called `c` should be in your path.
 
-From there, you can either get the result of a single expression via `c <expr>` or enter a REPL by just typing `c`.
+From there, you can get the result of a single expression via `c <expr>` or `echo <expr> | c -`, or you enter a REPL by just typing `c`.
 
 ### Statements
 
