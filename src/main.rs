@@ -42,13 +42,18 @@ fn main() {
         if Path::new(&init_file).exists() {
             let file = File::open(init_file);
             if file.is_ok() {
-                println!("Loading from init file...");
                 for line in BufReader::new(file.unwrap()).lines() {
                     let stmt = parse_stmt(&line.unwrap());
                     match stmt {
-                        Err(err) => println!("Error: {}", err),
-                        Ok(ast) => println!("{}", eval(&ast, &mut env))
-                    }
+                        Err(err) => println!("Init File Error: {}", err),
+                        Ok(ast) => {
+                            // Only print errors
+                            let res = eval(&ast, &mut env);
+                            if res.starts_with("Error") {
+                                println!("Init File {}", res);
+                            }
+                        }
+                    }       
                 }
             }
         }
