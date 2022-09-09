@@ -143,7 +143,7 @@ impl Var {
 
     pub fn do_cmp(self, other: Self, op: &str) -> Self {
         match op {
-            "==" => self.do_op(
+            "=" => self.do_op(
                 other,
                 |a, b| if a == b {
                     BigDecimal::from_i8(-1).unwrap()
@@ -209,7 +209,10 @@ impl Var {
                 } else {
                     BigInt::zero()
                 }
-            ), _ => Self::impossible()
+            ), _ => {
+                    println!("Here! {}", op);
+                    Self::impossible()            
+            }
         }
     }
 
@@ -269,81 +272,60 @@ impl Var {
                 let f_self = self.to_float();
                 let f_other = other.to_float();
 
-                let real = dec_op(
-                    if f_self.real_num_data.is_some() {
-                        f_self.real_num_data.unwrap()
-                    } else {
-                        BigDecimal::zero()
-                    }, if f_other.real_num_data.is_some() {
-                        f_other.real_num_data.unwrap()
-                    } else {
-                        BigDecimal::zero()
-                    }
-                );
-                let lat = dec_op(
-                    if f_self.lat_num_data.is_some() {
-                        f_self.lat_num_data.unwrap()
-                    } else {
-                        BigDecimal::zero()
-                    }, if f_other.lat_num_data.is_some() {
-                        f_other.lat_num_data.unwrap()
-                    } else {
-                        BigDecimal::zero()
-                    }
-                );
+                let real = if f_self.real_num_data.is_some() && f_other.real_num_data.is_some() {
+                    Some(dec_op(f_self.real_num_data.unwrap(), f_other.real_num_data.unwrap()))
+                } else if f_self.real_num_data.is_some() {
+                    f_self.real_num_data
+                } else if f_other.real_num_data.is_some() {
+                    f_other.real_num_data
+                } else {
+                    None
+                };
+                let lat = if f_self.lat_num_data.is_some() && f_other.lat_num_data.is_some() {
+                    Some(dec_op(f_self.lat_num_data.unwrap(), f_other.lat_num_data.unwrap()))
+                } else if f_self.lat_num_data.is_some() {
+                    f_self.lat_num_data
+                } else if f_other.lat_num_data.is_some() {
+                    f_other.lat_num_data
+                } else {
+                    None
+                };
 
                 Var {
                     ls_data: None,
-                    real_num_data: if real.is_zero() {
-                        None
-                    } else {
-                        Some(real)
-                    }, lat_num_data: if lat.is_zero() {
-                        None
-                    } else {
-                        Some(lat)
-                    }, real_int_data: None,
+                    real_num_data: real,
+                    lat_num_data: lat,
+                    real_int_data: None,
                     lat_int_data: None
                 }
             } else {
                 // All ints
-                let real = int_op(
-                    if self.real_int_data.is_some() {
-                        self.real_int_data.unwrap()
-                    } else {
-                        BigInt::zero()
-                    }, if other.real_int_data.is_some() {
-                        other.real_int_data.unwrap()
-                    } else {
-                        BigInt::zero()
-                    }
-                );
-                let lat = int_op(
-                    if self.lat_int_data.is_some() {
-                        self.lat_int_data.unwrap()
-                    } else {
-                        BigInt::zero()
-                    }, if other.lat_int_data.is_some() {
-                        other.lat_int_data.unwrap()
-                    } else {
-                        BigInt::zero()
-                    }
-                );
+                let real = if self.real_int_data.is_some() && other.real_int_data.is_some() {
+                    Some(int_op(self.real_int_data.unwrap(), other.real_int_data.unwrap()))
+                } else if self.real_int_data.is_some() {
+                    self.real_int_data
+                } else if other.real_int_data.is_some() {
+                    other.real_int_data
+                } else {
+                    None
+                };
+                let lat = if self.lat_int_data.is_some() && other.lat_int_data.is_some() {
+                    Some(int_op(self.lat_int_data.unwrap(), other.lat_int_data.unwrap()))
+                } else if self.lat_int_data.is_some() {
+                    self.lat_int_data
+                } else if other.lat_int_data.is_some() {
+                    other.lat_int_data
+                } else {
+                    None
+                };
 
                 Var {
                     ls_data: None,
                     real_num_data: None,
                     lat_num_data: None,
-                    real_int_data: if real.is_zero() {
-                        None
-                    } else {
-                        Some(real)
-                    }, lat_int_data: if lat.is_zero() {
-                        None
-                    } else {
-                        Some(lat)        
-                    } 
-                }    
+                    real_int_data: real,
+                    lat_int_data: lat
+                } 
             }
         }
     }
