@@ -35,30 +35,30 @@ Each line in the REPL or passed in directly can be one of three things:
 
 1. An expr, e.g. `$ c 2+2` which prints `4`
 2. A function definition, e.g:
-  
-  ```
-  $ c
-  CLI Calculator v1. Enter 'q' or press Ctrl-C to exit
-  > \inc(x)->x+1
-  > 3+inc(x)
-  4
-  >
-  ```
-  
-  As noted before, you can store these custom functions as lines inside the `.config/calc/init`
+    
+    ```
+    $ c
+    CLI Calculator v1. Enter 'q' or press Ctrl-C to exit
+    > \inc(x)->x+1
+    > 3+inc(x)
+    4
+    >
+    ```
+    
+    As noted before, you can store these custom functions as lines inside the `.config/calc/init`
 
 3. A variable assignment, e.g:
-
-  ```
-  $ c
-  CLI Calculator v1. Enter 'q' or press Ctrl-C to exit
-  > let x := 7
-  > x-3
-  4
-  >
-  ```
-  
-  These can also be placed into `.config/calc/init`
+    
+    ```
+    $ c
+    CLI Calculator v1. Enter 'q' or press Ctrl-C to exit
+    > let x := 7
+    > x-3
+    4
+    >
+    ```
+    
+    These can also be placed into `.config/calc/init`
 
 ### Data Types
 
