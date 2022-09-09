@@ -5,7 +5,7 @@
 
 use crate::var::Var;
 
-pub const BUILTIN_FUNCS: [(&str, &fn(Vec<Var>)->Result<Var, String>); 21] = [
+pub const BUILTIN_FUNCS: [(&str, &fn(Vec<Var>)->Result<Var, String>); 22] = [
     ("sin", &SIN),
     ("cos", &COS),
     ("tan", &TAN),
@@ -26,7 +26,8 @@ pub const BUILTIN_FUNCS: [(&str, &fn(Vec<Var>)->Result<Var, String>); 21] = [
     ("len", &LEN),
     ("app", &APP),
     ("del", &DEL),
-    ("sign", &SIGN)
+    ("sign", &SIGN),
+    ("comp", &COMP)
 ];
 
 // TODO: Implement the builtin functions
@@ -51,4 +52,5 @@ pub const LEN: fn(Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not imp
 pub const APP: fn(Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not implemented"));
 pub const DEL: fn(Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not implemented"));
 pub const SIGN: fn(Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not implemented"));
+pub const COMP: fn(Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not implemented"));
 
