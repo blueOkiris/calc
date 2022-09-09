@@ -12,7 +12,7 @@
  * <stmt>           ::= <expr> | <func-def> | <asgn>
  * <func-def>       ::= '\' <ident> '(' [ <ident> { ',' <ident> } ] ')' '->' <expr>
  * <asgn>           ::= 'let' <ident> ':=' <expr>
- * <expr>           ::= <un-expr> // This is dumb lol
+ * <expr>           ::= <un-expr> [ '?' <expr> ':' <expr> ]
  * <un-expr>        ::= <exp-expr> | 'j' <exp-expr> | '-' <exp-expr>
  * <exp-expr>       ::= <prod-expr> [ '^' <prod-expr> ]
  * <prod-expr>      ::= <sum-expr> [ ( '*' | '/' ) <sum-expr> ]
@@ -31,7 +31,7 @@ pub enum Token {
     Statement(Box<Token>),
     FunctionDefinition(String, Vec<String>, Box<Token>),
     Assignment(String, Box<Token>),
-    Expression(Box<Token>),
+    Expression(Box<Token>, Option<Box<Token>>, Option<Box<Token>>),
     UnaryExpression(Box<Token>, Option<String>),
     ExponentialExpression(Box<Token>, Option<Box<Token>>),
     ProductExpression(Box<Token>, Option<String>, Option<Box<Token>>),
@@ -230,15 +230,53 @@ fn parse_asgn(code: &str) -> Option<ParseResult> {
 
 /* Expressionession Parser */
 
-// <expr> ::= <un-expr>
+// <expr> ::= <un-expr> [ '?' <expr> ':' <expr> ]
 fn parse_expr(code: &str, pos: usize) -> Result<ParseResult, String> {
     let unary = parse_un_expr(code, pos);
     match unary {
         Err(err) => Err(err),
-        Ok(unary_res) => Ok(ParseResult {
-            new_start: unary_res.new_start,
-            token: Token::Expression(Box::new(unary_res.token))
-        })
+        Ok(unary_res) => {
+            let q = parse_word("?", code.split_at(unary_res.new_start).1);
+            if q.is_none() {
+                Ok(ParseResult {
+                    new_start: unary_res.new_start,
+                    token: Token::Expression(Box::new(unary_res.token), None, None)
+                })
+            } else {
+                let mut substr_start = unary_res.new_start + q.unwrap().new_start;
+
+                let t_expr = parse_expr(code.split_at(substr_start).1, pos + substr_start);
+                if t_expr.is_err() {
+                    return Err(format!(
+                        "Expected expression after '?' at pos {}", pos + substr_start
+                    ));
+                }
+                substr_start += t_expr.clone().unwrap().new_start;
+
+                let coln = parse_word(":", code.split_at(substr_start).1);
+                if coln.is_none() {
+                    return Err(format!("Expected ':' at pos {}", pos + substr_start));
+                }
+                substr_start += coln.unwrap().new_start;
+
+                let f_expr = parse_expr(code.split_at(substr_start).1, pos + substr_start);
+                if f_expr.is_err() {
+                    return Err(format!(
+                        "Expected expression after ':' at pos {}", pos + substr_start
+                    ));
+                }
+                substr_start += f_expr.clone().unwrap().new_start;
+
+                Ok(ParseResult {
+                    new_start: substr_start,
+                    token: Token:: Expression(
+                        Box::new(unary_res.token),
+                        Some(Box::new(t_expr.unwrap().token)),
+                        Some(Box::new(f_expr.unwrap().token))
+                    )
+                })
+            }
+        }
     }
 }
 
@@ -424,7 +462,7 @@ fn parse_rel_expr(code: &str, pos: usize) -> Result<ParseResult, String> {
     substr_start = first.clone().unwrap().new_start;
 
     // Optional '==', '=/=', '>', ...
-    let ops = [ "==", "=/=", ">", "<", ">=", "<=" ];
+    let ops = [ "=/=", "=", ">=", "<=", ">", "<" ];
     let mut atmpt = None;
     let mut used_op = "";
     for op in ops {
@@ -734,7 +772,7 @@ fn parse_ident(code: &str) -> Option<ParseResult> {
     // Make sure no num start
     if code.len() > 0 && (
         code.chars().nth(0).unwrap().is_alphabetic() || code.chars().nth(0).unwrap() == '_'
-    ) {
+    ) && code.chars().nth(0).unwrap() != 'j' {
         // Then get everything
         while i < code.len() && (
             code.chars().nth(i).unwrap().is_ascii_alphanumeric()
