@@ -7,6 +7,7 @@ mod parser;
 mod var;
 mod eval;
 mod args;
+mod builtin;
 
 use std::{
     path::Path,
