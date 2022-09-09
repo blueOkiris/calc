@@ -46,6 +46,7 @@ Each line in the REPL or passed in directly can be one of three things:
   ```
   
   As noted before, you can store these custom functions as lines inside the `.config/calc/init`
+
 3. A variable assignment, e.g:
 
   ```
@@ -56,7 +57,7 @@ Each line in the REPL or passed in directly can be one of three things:
   4
   >
   ```
-
+  
   These can also be placed into `.config/calc/init`
 
 ### Data Types
