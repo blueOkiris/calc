@@ -11,7 +11,7 @@ mod args;
 use std::{
     process::exit,
     io::{
-        stdout, stdin, Write
+        stdout, stdin, Write, BufRead
     }
 };
 use termion::{
@@ -31,9 +31,19 @@ fn main() {
     let mut env = Environment::new();
     let args = cli_args();
     if args.is_present("stmts") {
-        let lines = args.value_of("stmts").unwrap().split('\n').collect::<Vec<&str>>();
+        let lines = if args.value_of("stmts").unwrap() != "-" {
+            args.value_of("stmts").unwrap().split('\n')
+                .map(|s| String::from(s)).collect::<Vec<String>>()
+        } else {
+            let mut ls = Vec::new();
+            let inp = stdin();
+            for line in inp.lock().lines() {
+                ls.push(line.unwrap().clone());
+            }
+            ls
+        };
         for line in lines {
-            let stmt = parse_stmt(line);
+            let stmt = parse_stmt(line.as_str());
             match stmt {
                 Err(err) => println!("Error: {}", err),
                 Ok(ast) => println!("{}", eval(&ast, &mut env))
