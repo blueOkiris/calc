@@ -41,10 +41,10 @@ pub fn eval(ast: &Token, env: &mut Environment) -> String {
             Token::FunctionDefinition(name, args, sub_expr) => eval_func_def(
                 name, args, sub_expr, env
             ), Token::Assignment(name, sub_expr) => eval_asgn(name, sub_expr, env),
-            Token::Expression(sub_ast) => match eval_expr(sub_ast, env) {
+            _ => match eval_expr(stmt, env) {
                 Err(err) => format!("Error: {}", err),
                 Ok(val) => val.to_string()
-            }, _ => String::from("Not implemented")
+            }
         }
     } else {
         String::from("Not implemented")
@@ -95,7 +95,7 @@ fn eval_asgn(name: &String, sub_expr: &Token, env: &mut Environment) -> String {
 // Meat and bones - actually calculate stuff
 fn eval_expr(ast: &Token, env: &Environment) -> Result<Var, String> {
     match ast {
-        Token::Expression(un) => eval_expr(un, env),
+        Token::Expression(un, t, f) => eval_expr(un, env),
         Token::UnaryExpression(exp, op) => {
             if op.is_none() {
                 eval_expr(exp, env)
@@ -180,6 +180,8 @@ fn eval_expr(ast: &Token, env: &Environment) -> Result<Var, String> {
                 if right_val.is_err() {
                     return right_val;
                 }
+                println!("Right: {:?}", right_val);
+                println!("Op: {:?}", op.clone().unwrap().as_str());
                 Ok(left_val.unwrap().do_cmp(right_val.unwrap(), op.clone().unwrap().as_str()))
             }
         }, Token::Term(inner) => eval_expr(inner, env),
