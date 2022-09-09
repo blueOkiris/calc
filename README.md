@@ -22,6 +22,14 @@ There is some software which can provide such an experience, such as Maple for o
 ### Features
 
 I needed it to support basic floating point math but also scientific options, integer math, and complex numbers all while not slowing me down to use, so I've implemented the necessary tools to do that as well as extensibility via persistent user defined functions and variables which go in the `.config/calc/init` file.
+### Installation
+
+Install by cloning this repo and running `cargo install --path .` from within it.
+
+Requires:
+- `cargo` the [Rust build system](https://www.rust-lang.org/tools/install)
+
+Probably doesn't work on Windows, but the Windows terminal isn't worth using, so I don't really care
 
 ## Usage
 
