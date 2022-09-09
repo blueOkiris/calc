@@ -7,7 +7,7 @@
  */
 
 use bigdecimal::{BigDecimal, Zero, ToPrimitive, FromPrimitive};
-use num::BigInt;
+use num::{BigInt, integer::sqrt};
 use std::{
     str::FromStr,
     ops::{
@@ -345,14 +345,102 @@ impl Sub for Var {
 impl Mul for Var {
     type Output = Self;
     fn mul(self, other: Self) -> Self {
-        self.do_op(other, |a, b| a * b, |a, b| a * b)
+        if self.lat_int_data.is_some() || self.lat_num_data.is_some()
+                || other.lat_int_data.is_some() || other.lat_num_data.is_some() {
+            let f_self = self.to_float();
+            let f_other = other.to_float();
+
+            let self_a = f_self.real_num_data.unwrap_or(BigDecimal::zero());
+            let self_b = f_self.lat_num_data.unwrap_or(BigDecimal::zero());
+            let other_a = f_other.real_num_data.unwrap_or(BigDecimal::zero());
+            let other_b = f_other.lat_num_data.unwrap_or(BigDecimal::zero());
+
+            let self_r = (self_a.square() + self_b.square()).sqrt().unwrap();
+            let other_r = (other_a.square() + other_b.square()).sqrt().unwrap();
+            let r = self_r * other_r;
+
+            let self_theta = if self_a.clone() == BigDecimal::zero() {
+                3.1415926535897932384626433832795028841971693993751 / 2.0
+            } else if self_a > BigDecimal::zero() {
+                (self_b / self_a.clone()).to_f64().unwrap().atan()
+            } else {
+                (self_b / self_a.clone()).to_f64().unwrap().atan()
+                    + 3.1415926535897932384626433832795028841971693993751
+            };
+            let other_theta = if other_a.clone() == BigDecimal::zero() {
+                3.1415926535897932384626433832795028841971693993751 / 2.0
+            } else if other_a > BigDecimal::zero() {
+                (other_b / other_a.clone()).to_f64().unwrap().atan()
+            } else {
+                (other_b / other_a.clone()).to_f64().unwrap().atan()
+                    + 3.1415926535897932384626433832795028841971693993751
+            };
+            let theta = self_theta + other_theta;
+
+            let new_a = r.clone() * BigDecimal::from_f64(theta.cos()).unwrap();
+            let new_b = r.clone() * BigDecimal::from_f64(theta.sin()).unwrap();
+            
+            Var {
+                ls_data: None,
+                real_num_data: Some(new_a),
+                lat_num_data: Some(new_b),
+                real_int_data: None,
+                lat_int_data: None
+            }
+        } else {
+            self.do_op(other, |a, b| a * b, |a, b| a * b)        
+        }
     }
 }
 
 impl Div for Var {
     type Output = Self;
     fn div(self, other: Self) -> Self {
-        self.do_op(other, |a, b| a / b, |a, b| a / b)
+        if self.lat_int_data.is_some() || self.lat_num_data.is_some()
+                || other.lat_int_data.is_some() || other.lat_num_data.is_some() {
+            let f_self = self.to_float();
+            let f_other = other.to_float();
+
+            let self_a = f_self.real_num_data.unwrap_or(BigDecimal::zero());
+            let self_b = f_self.lat_num_data.unwrap_or(BigDecimal::zero());
+            let other_a = f_other.real_num_data.unwrap_or(BigDecimal::zero());
+            let other_b = f_other.lat_num_data.unwrap_or(BigDecimal::zero());
+
+            let self_r = (self_a.square() + self_b.square()).sqrt().unwrap();
+            let other_r = (other_a.square() + other_b.square()).sqrt().unwrap();
+            let r = self_r / other_r;
+
+            let self_theta = if self_a.clone() == BigDecimal::zero() {
+                3.1415926535897932384626433832795028841971693993751 / 2.0
+            } else if self_a > BigDecimal::zero() {
+                (self_b / self_a.clone()).to_f64().unwrap().atan()
+            } else {
+                (self_b / self_a.clone()).to_f64().unwrap().atan()
+                    + 3.1415926535897932384626433832795028841971693993751
+            };
+            let other_theta = if other_a.clone() == BigDecimal::zero() {
+                3.1415926535897932384626433832795028841971693993751 / 2.0
+            } else if other_a > BigDecimal::zero() {
+                (other_b / other_a.clone()).to_f64().unwrap().atan()
+            } else {
+                (other_b / other_a.clone()).to_f64().unwrap().atan()
+                    + 3.1415926535897932384626433832795028841971693993751
+            };
+            let theta = self_theta - other_theta;
+
+            let new_a = r.clone() * BigDecimal::from_f64(theta.cos()).unwrap();
+            let new_b = r.clone() * BigDecimal::from_f64(theta.sin()).unwrap();
+            
+            Var {
+                ls_data: None,
+                real_num_data: Some(new_a),
+                lat_num_data: Some(new_b),
+                real_int_data: None,
+                lat_int_data: None
+            }
+        } else {
+            self.do_op(other, |a, b| a / b, |a, b| a / b)        
+        }
     }
 }
 
@@ -360,16 +448,23 @@ impl Div for Var {
 impl BitXor for Var {
     type Output = Self;
     fn bitxor(self, other: Self) -> Self {
-        self.do_op(
-            other,
-            |a, b| {
-                let mut res = a.clone();
-                for _ in 0..b.to_u32().expect("Non-integer exponent or too-big exponent") {
-                    res *= a.clone();
-                }
-                res
-            }, |a, b| a.pow(b.to_u32().expect("Power too large."))
-        )
+        if other.real_int_data.is_none() && !other.real_num_data.is_some() {
+            Var::impossible() 
+        } else if other.real_int_data.is_none() {
+            let exp = BigInt::from_str(other.real_num_data.unwrap().to_string().as_str()).unwrap();
+            let mut res = self.clone();
+            for _ in 0..exp.to_u32().expect("Non-integer or too-big exponent") {
+                res = res * self.clone();
+            }
+            res
+        } else {
+            let mut res = self.clone();
+            for _ in 0..other.real_int_data.unwrap().to_u32()
+                    .expect("Non-integer or too-big exponent") {
+                res = res * self.clone();
+            }
+            res
+        }
     }
 }
 
