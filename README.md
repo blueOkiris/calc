@@ -74,7 +74,7 @@ The basic form of data is floats as that is typically the use case of a calculat
 
 If you would like to do integer math, you can use integers by giving an integer value followed by '\_'
 
-You can also make complex numbers either by using the function `compl(radius, angle)` or by adding `j` in front of the complex part of a float.
+You can also make complex numbers either by using the function `comp(radius, angle)` or by adding `j` in front of the complex part of a float.
 
 There are also lists, defined like `[ #1, #2, #3, ... ]`
 
