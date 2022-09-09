@@ -565,14 +565,6 @@ fn parse_term(code: &str, pos: usize) -> Result<ParseResult, String> {
         });
     }
 
-    let atmpt = parse_un_expr(code, pos);
-    if atmpt.is_ok() {
-        return Ok(ParseResult {
-            new_start: atmpt.clone().unwrap().new_start,
-            token: Token::Term(Box::new(atmpt.unwrap().token))
-        });
-    }
-
     Err(format!("Expected term at pos {}", pos))
 }
 
