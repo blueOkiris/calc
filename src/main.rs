@@ -9,11 +9,14 @@ mod eval;
 mod args;
 
 use std::{
+    path::Path,
+    fs::File,
     process::exit,
     io::{
-        stdout, stdin, Write, BufRead
+        stdout, stdin, Write, BufRead, BufReader
     }
 };
+use dirs::home_dir;
 use termion::{
     input::TermRead,
     event::Key,
@@ -29,6 +32,27 @@ use crate::{
 
 fn main() {
     let mut env = Environment::new();
+
+    // Load the init file
+    let home = home_dir();
+    if home.is_some() {
+        let mut init_file = home.unwrap();
+        init_file.push(".config/calc/init");
+        if Path::new(&init_file).exists() {
+            let file = File::open(init_file);
+            if file.is_ok() {
+                println!("Loading from init file...");
+                for line in BufReader::new(file.unwrap()).lines() {
+                    let stmt = parse_stmt(&line.unwrap());
+                    match stmt {
+                        Err(err) => println!("Error: {}", err),
+                        Ok(ast) => println!("{}", eval(&ast, &mut env))
+                    }
+                }
+            }
+        }
+    }
+
     let args = cli_args();
     if args.is_present("stmts") {
         let lines = if args.value_of("stmts").unwrap() != "-" {
