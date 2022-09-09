@@ -21,7 +21,7 @@ There is some software which can provide such an experience, such as Maple for o
 
 ### Features
 
-I needed it to support basic floating point math but also scientific options, integer math, and complex numbers all while not slowing me down to use, so I've implemented the necessary tools to do that as well as extensibility via user defined functions which go in the `.config/calc/func` file.
+I needed it to support basic floating point math but also scientific options, integer math, and complex numbers all while not slowing me down to use, so I've implemented the necessary tools to do that as well as extensibility via user defined functions which go in the `.config/calc/init` file.
 
 ## Usage
 
