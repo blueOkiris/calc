@@ -97,6 +97,7 @@ There are a number of functions to expand the functionality of the calculator to
 | app(ls, i) | append i to the end of ls |
 | del(ls, n) | remove the nth item in ls |
 | sign(x) | 0 for 0, -1 for neg, 1 for pos |
+| comp(r, ang) | build a complex number from radius and angle |
 
 NOT IMPLEMENTED YET
 
