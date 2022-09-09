@@ -95,8 +95,22 @@ fn eval_asgn(name: &String, sub_expr: &Token, env: &mut Environment) -> String {
 // Meat and bones - actually calculate stuff
 fn eval_expr(ast: &Token, env: &Environment) -> Result<Var, String> {
     match ast {
-        Token::Expression(un, t, f) => eval_expr(un, env),
-        Token::UnaryExpression(exp, op) => {
+        Token::Expression(un, t, f) => {
+            if t.is_none() {
+                return eval_expr(un, env);
+            }
+            
+            let test = eval_expr(un, env);
+            if test.is_err() {
+                return test;
+            }
+
+            if test.unwrap().to_string() == "0" {
+                eval_expr(f.clone().unwrap().as_ref(), env)
+            } else {
+                eval_expr(t.clone().unwrap().as_ref(), env)
+            }
+        }, Token::UnaryExpression(exp, op) => {
             if op.is_none() {
                 eval_expr(exp, env)
             } else {
@@ -180,8 +194,6 @@ fn eval_expr(ast: &Token, env: &Environment) -> Result<Var, String> {
                 if right_val.is_err() {
                     return right_val;
                 }
-                println!("Right: {:?}", right_val);
-                println!("Op: {:?}", op.clone().unwrap().as_str());
                 Ok(left_val.unwrap().do_cmp(right_val.unwrap(), op.clone().unwrap().as_str()))
             }
         }, Token::Term(inner) => eval_expr(inner, env),
