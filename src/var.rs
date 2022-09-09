@@ -209,10 +209,7 @@ impl Var {
                 } else {
                     BigInt::zero()
                 }
-            ), _ => {
-                    println!("Here! {}", op);
-                    Self::impossible()            
-            }
+            ), _ => Self::impossible()
         }
     }
 
