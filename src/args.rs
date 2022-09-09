@@ -14,9 +14,8 @@ pub fn cli_args() -> ArgMatches {
         .about("A simple yet powerful cli calculator/programming language.")
         .arg(
             Arg::new("stmts")
-                .short('s')
                 .takes_value(true)
-                .help("Immediately evaluate '\\n' separated lines\n(as opposed to REPL)")
+                .help("Immediately evaluate '\\n' separated lines\n(leave blank for REPL)")
         ).get_matches()
 }
 
