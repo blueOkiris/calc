@@ -198,7 +198,7 @@ fn eval_expr(ast: &Token, env: &Environment) -> Result<Var, String> {
             }
         }, Token::Term(inner) => eval_expr(inner, env),
         Token::Integer(text) => {
-            match text.parse::<i64>() {
+            match text.split_at(text.len() - 1).0.parse::<i64>() {
                 Err(_) => Err(format!("Failed to parse integer {}", text)),
                 Ok(val) => {
                     Ok(Var {
