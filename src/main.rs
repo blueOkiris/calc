@@ -19,7 +19,7 @@ use std::{
         stdout, stdin, Write, BufRead, BufReader
     }
 };
-use dirs::home_dir;
+use dirs::config_dir;
 use termion::{
     input::TermRead,
     event::Key,
@@ -37,10 +37,10 @@ fn main() {
     let mut env = Environment::new();
 
     // Load the init file
-    let home = home_dir();
-    if home.is_some() {
-        let mut init_file = home.unwrap();
-        init_file.push(".config/calc/init");
+    let conf = config_dir();
+    if conf.is_some() {
+        let mut init_file = conf.unwrap();
+        init_file.push("/calc/init");
         if Path::new(&init_file).exists() {
             let file = File::open(init_file);
             if file.is_ok() {
