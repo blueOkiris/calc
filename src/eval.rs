@@ -3,16 +3,15 @@
  * Description: Take parser output and evaluate or adjust an environment
  */
 
-use bigdecimal::BigDecimal;
-use num::BigInt;
-use std::{
-    collections::HashMap,
-    str::FromStr
-};
+use std::collections::HashMap;
 use crate::{
     var::Var,
     parser::Token,
-    builtin::BUILTIN_FUNCS
+    builtin::BUILTIN_FUNCS,
+    complex::{
+        FComplex,
+        IComplex
+    }
 };
 
 #[derive(Clone, Debug)]
@@ -199,28 +198,24 @@ fn eval_expr(ast: &Token, env: &Environment) -> Result<Var, String> {
             }
         }, Token::Term(inner) => eval_expr(inner, env),
         Token::Integer(text) => {
-            match BigInt::from_str(text) {
+            match text.parse::<i64>() {
                 Err(_) => Err(format!("Failed to parse integer {}", text)),
                 Ok(val) => {
                     Ok(Var {
                         ls_data: None,
-                        real_num_data: None,
-                        lat_num_data: None,
-                        real_int_data: Some(val),
-                        lat_int_data: None
+                        num_data: None,
+                        int_data: Some(IComplex::new_polar(val, 0))
                     })
                 }
             }
         }, Token::Number(text) => {
-            match BigDecimal::from_str(text) {
+            match text.parse::<f64>() {
                 Err(_) => Err(format!("Failed to parse number {}", text)),
                 Ok(val) => {
                     Ok(Var {
                         ls_data: None,
-                        real_num_data: Some(val),
-                        lat_num_data: None,
-                        real_int_data: None,
-                        lat_int_data: None
+                        num_data: Some(FComplex::new_polar(val, 0.0)),
+                        int_data: None
                     })
                 }
             }
@@ -241,10 +236,8 @@ fn eval_expr(ast: &Token, env: &Environment) -> Result<Var, String> {
             }
             Ok(Var {
                 ls_data: Some(var_arr),
-                real_num_data: None,
-                lat_num_data: None,
-                real_int_data: None,
-                lat_int_data: None
+                num_data: None,
+                int_data: None
             })
         }, Token::FunctionCall(name, args) => {
             // Try built in funcs first
