@@ -8,6 +8,7 @@ mod var;
 mod eval;
 mod args;
 mod builtin;
+mod complex;
 
 use std::{
     path::Path,
