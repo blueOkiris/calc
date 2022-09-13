@@ -26,7 +26,7 @@ impl FComplex {
     pub fn new_cardinal(real: f64, lateral: f64) -> Self {
         let len = (real.powf(2.0) + lateral.powf(2.0)).sqrt();
         let angle = if real == 0.0 {
-            PI
+            PI / 2.0
         } else if real > 0.0 {
             (lateral / real).atan()
         } else {
@@ -69,7 +69,7 @@ impl Sub for FComplex {
     fn sub(self, other: Self) -> Self {
         let (r1, l1) = self.to_cardinal();
         let (r2, l2) = other.to_cardinal();
-        Self::new_cardinal(r1 + r2, l1 + l2)
+        Self::new_cardinal(r1 - r2, l1 - l2)
     }
 }
 
@@ -169,19 +169,19 @@ impl IComplex {
     pub fn new_cardinal(real: i64, lateral: i64) -> Self {
         let len = ((real.pow(2) + lateral.pow(2)) as f64).sqrt() as i64;
         let angle_deg = if real == 0 {
-            180
+            90
         } else if real > 0 {
-            (((lateral / real) as f64).atan() * 180.0 / PI) as i64
+            ((lateral as f64 / real as f64).atan() * 180.0 / PI) as i64
         } else {
-            ((((lateral / real) as f64).atan() + PI) * 180.0 / PI) as i64
+            (((lateral as f64 / real as f64).atan() + PI) * 180.0 / PI) as i64
         };
 
         Self::new_polar(len, angle_deg)
     }
 
     pub fn to_cardinal(&self) -> (i64, i64) {
-        let real = self.len * (((self.angle_deg as f64).cos() * 180.0 / PI) as i64);
-        let lateral = self.len * (((self.angle_deg as f64).sin() * 180.0 / PI) as i64);
+        let real = self.len * ((self.angle_deg as f64 * PI / 180.0).cos() as i64);
+        let lateral = self.len * ((self.angle_deg as f64 * PI / 180.0).sin() as i64);
         (real, lateral)
     }
 
@@ -216,7 +216,7 @@ impl Sub for IComplex {
     fn sub(self, other: Self) -> Self {
         let (r1, l1) = self.to_cardinal();
         let (r2, l2) = other.to_cardinal();
-        Self::new_cardinal(r1 + r2, l1 + l2)
+        Self::new_cardinal(r1 - r2, l1 - l2)
     }
 }
 
