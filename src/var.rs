@@ -6,88 +6,68 @@
  * - Real/Complex and Int/Float/List
  */
 
-use bigdecimal::{BigDecimal, Zero, ToPrimitive, FromPrimitive};
-use num::{BigInt, integer::sqrt};
-use std::{
-    str::FromStr,
-    ops::{
-        Add, Sub, Mul, Div, BitXor
-    }
+use std::ops::{
+    Add, Sub, Mul, Div, BitXor
+};
+use crate::complex::{
+    FComplex, IComplex
 };
 
 // Can be list, complex float, or complex int
 #[derive(Clone, Debug)]
 pub struct Var {
     pub ls_data: Option<Vec<Var>>,
-    pub real_num_data: Option<BigDecimal>,
-    pub lat_num_data: Option<BigDecimal>,
-    pub real_int_data: Option<BigInt>,
-    pub lat_int_data: Option<BigInt>
+    pub num_data: Option<FComplex>,
+    pub int_data: Option<IComplex>
 }
 
 // Mainly the base functions 
 impl Var {
     pub fn to_string(&self) -> String {
-        let mut repr = String::new();
-        if self.ls_data.is_none() {
-            if self.real_num_data.is_some() {
-                repr.push_str(self.real_num_data.clone().unwrap().to_string().as_str());
-            } else if self.real_int_data.is_some() {
-                repr.push_str(self.real_int_data.clone().unwrap().to_string().as_str());
-            }
-            if self.lat_num_data.is_some() {
-                if repr.len() > 0 {
-                    repr.push('+');
-                }
-                repr.push('j');
-                repr.push_str(self.lat_num_data.clone().unwrap().to_string().as_str());
-            } else if self.lat_int_data.is_some() {
-                if repr.len() > 0 {
-                    repr.push('+');
-                }
-                repr.push('j');
-                repr.push_str(self.lat_int_data.clone().unwrap().to_string().as_str());
-            }
-        } else {
+        if self.num_data.is_some() {
+            self.num_data.unwrap().to_string()
+        } else if self.int_data.is_some() {
+            self.int_data.unwrap().to_string()
+        } else if self.ls_data.is_some() {
+            let mut repr = String::new();
             repr.push_str("[ ");
             for var in self.ls_data.clone().unwrap() {
                 repr.push_str(var.to_string().as_str());
                 repr.push(' ');
             }
             repr.push(']');
+            repr
+        } else {
+            String::from("IMPOSSIBLE DATA ACHIEVED")
         }
-        if repr.len() < 1 {
-            repr = String::from("IMPOSSIBLE DATA ACHIEVED")
-        }
-        repr
     }
 
     pub fn impossible() -> Self {
         Self {
             ls_data: None,
-            real_num_data: None,
-            lat_num_data: None,
-            real_int_data: None,
-            lat_int_data: None
+            num_data: None,
+            int_data: None
         }
     }
 
     pub fn to_lat(&self) -> Self {
         let mut new_self = self.clone();
 
-        if new_self.real_num_data.is_some() {
-            new_self.lat_num_data = new_self.real_num_data;
-            new_self.real_num_data = None;
-        } else if new_self.real_int_data.is_some() {
-            new_self.lat_int_data = new_self.real_int_data;
-            new_self.real_int_data = None;
-        } else if new_self.ls_data.is_some() {
+        if new_self.ls_data.is_some() {
             let mut new_ls = Vec::new();
             let ls = new_self.ls_data.unwrap();
             for var in ls {
                 new_ls.push(var.to_lat());
             }
             new_self.ls_data = Some(new_ls);
+        } else if new_self.num_data.is_some() {
+            let flipped = new_self.num_data.unwrap();
+            let (real, _) = flipped.to_cardinal();
+            new_self.num_data = Some(FComplex::new_cardinal(0.0, real));
+        } else if new_self.int_data.is_some() {
+            let flipped = new_self.int_data.unwrap();
+            let (real, _) = flipped.to_cardinal();
+            new_self.int_data = Some(IComplex::new_cardinal(0, real));
         }
         
         new_self
@@ -96,21 +76,19 @@ impl Var {
     pub fn to_neg(&self) -> Self {
         let mut new_self = self.clone();
 
-        if new_self.real_num_data.is_some() {
-            new_self.real_num_data = Some(-new_self.real_num_data.unwrap());
-        } else if new_self.real_int_data.is_some() {
-            new_self.real_int_data = Some(-new_self.real_int_data.unwrap());
-        } else if new_self.lat_num_data.is_some() {
-            new_self.lat_num_data = Some(-new_self.lat_num_data.unwrap());
-        } else if new_self.lat_int_data.is_some() {
-            new_self.lat_int_data = Some(-new_self.lat_int_data.unwrap());
-        } else if new_self.ls_data.is_some() {
+        if new_self.ls_data.is_some() {
             let mut new_ls = Vec::new();
             let ls = new_self.ls_data.unwrap();
             for var in ls {
                 new_ls.push(var.to_neg());
             }
             new_self.ls_data = Some(new_ls);
+        } else if new_self.num_data.is_some() {
+            let data = new_self.num_data.unwrap();
+            new_self.num_data = Some(FComplex::new_polar(-data.len, data.angle));
+        } else if new_self.int_data.is_some() {
+            let data = new_self.int_data.unwrap();
+            new_self.int_data = Some(IComplex::new_polar(-data.len, data.angle_deg));
         }
         
         new_self
@@ -119,23 +97,15 @@ impl Var {
     pub fn to_float(&self) -> Self {
         let mut new_self = self.clone();
 
-        if new_self.real_int_data.is_some() {
-            new_self.real_num_data = Some(BigDecimal::from_str(
-                new_self.real_int_data.unwrap().to_string().as_str()
-            ).unwrap());
-            new_self.real_int_data = None;
-        } else if new_self.lat_int_data.is_some() {
-            new_self.lat_num_data = Some(BigDecimal::from_str(
-                new_self.lat_int_data.unwrap().to_string().as_str()
-            ).unwrap());
-            new_self.lat_int_data = None;
-        } else if new_self.ls_data.is_some() {
+        if new_self.ls_data.is_some() {
             let mut new_ls = Vec::new();
             let ls = new_self.ls_data.unwrap();
             for var in ls {
                 new_ls.push(var.to_float());
             }
             new_self.ls_data = Some(new_ls);
+        } else if new_self.int_data.is_some() {
+            new_self.num_data = Some(new_self.int_data.unwrap().to_fcomplex());
         }
         
         new_self
@@ -145,78 +115,36 @@ impl Var {
         match op {
             "=" => self.do_op(
                 other,
-                |a, b| if a == b {
-                    BigDecimal::from_i8(-1).unwrap()
-                } else {
-                    BigDecimal::zero()
-                }, |a, b| if a == b {
-                    BigInt::from_i8(-1).unwrap()
-                } else {
-                    BigInt::zero()
-                }
+                |a, b| if a == b { FComplex::new_polar(-1.0, 0.0) } else { FComplex::zero() },
+                |a, b| if a == b { IComplex::new_polar(-1, 0) } else { IComplex::zero() }
             ), "=/=" => self.do_op(
                 other,
-                |a, b| if a != b {
-                    BigDecimal::from_i8(-1).unwrap()
-                } else {
-                    BigDecimal::zero()
-                }, |a, b| if a != b {
-                    BigInt::from_i8(-1).unwrap()
-                } else {
-                    BigInt::zero()
-                }
+                |a, b| if a != b { FComplex::new_polar(-1.0, 0.0) } else { FComplex::zero() },
+                |a, b| if a != b { IComplex::new_polar(-1, 0) } else { IComplex::zero() }
             ), ">" => self.do_op(
                 other,
-                |a, b| if a > b {
-                    BigDecimal::from_i8(-1).unwrap()
-                } else {
-                    BigDecimal::zero()
-                }, |a, b| if a > b {
-                    BigInt::from_i8(-1).unwrap()
-                } else {
-                    BigInt::zero()
-                }
+                |a, b| if a > b { FComplex::new_polar(-1.0, 0.0) } else { FComplex::zero() },
+                |a, b| if a > b { IComplex::new_polar(-1, 0) } else { IComplex::zero() }
             ), "<" => self.do_op(
                 other,
-                |a, b| if a < b {
-                    BigDecimal::from_i8(-1).unwrap()
-                } else {
-                    BigDecimal::zero()
-                }, |a, b| if a < b {
-                    BigInt::from_i8(-1).unwrap()
-                } else {
-                    BigInt::zero()
-                }
+                |a, b| if a < b { FComplex::new_polar(-1.0, 0.0) } else { FComplex::zero() },
+                |a, b| if a < b { IComplex::new_polar(-1, 0) } else { IComplex::zero() }
             ), ">=" => self.do_op(
                 other,
-                |a, b| if a >= b {
-                    BigDecimal::from_i8(-1).unwrap()
-                } else {
-                    BigDecimal::zero()
-                }, |a, b| if a >= b {
-                    BigInt::from_i8(-1).unwrap()
-                } else {
-                    BigInt::zero()
-                }
+                |a, b| if a >= b { FComplex::new_polar(-1.0, 0.0) } else { FComplex::zero() },
+                |a, b| if a >= b { IComplex::new_polar(-1, 0) } else { IComplex::zero() }
             ), "<=" => self.do_op(
                 other,
-                |a, b| if a <= b {
-                    BigDecimal::from_i8(-1).unwrap()
-                } else {
-                    BigDecimal::zero()
-                }, |a, b| if a <= b {
-                    BigInt::from_i8(-1).unwrap()
-                } else {
-                    BigInt::zero()
-                }
+                |a, b| if a <= b { FComplex::new_polar(-1.0, 0.0) } else { FComplex::zero() },
+                |a, b| if a <= b { IComplex::new_polar(-1, 0) } else { IComplex::zero() }
             ), _ => Self::impossible()
         }
     }
 
     // Basically dec_op/int_op are +, -, etc, but this way I can reuse code
     pub fn do_op<
-        DF: FnOnce(BigDecimal, BigDecimal) -> BigDecimal + Copy,
-        IF: FnOnce(BigInt, BigInt) -> BigInt + Copy
+        DF: FnOnce(FComplex, FComplex) -> FComplex + Copy,
+        IF: FnOnce(IComplex, IComplex) -> IComplex + Copy
     >(self, other: Self, dec_op: DF, int_op: IF) -> Self {
         // Check for lists
         if self.ls_data.is_some() && other.ls_data.is_some() {
@@ -231,10 +159,8 @@ impl Var {
             }
             Var {
                 ls_data: Some(new_ls),
-                real_num_data: None,
-                lat_num_data: None,
-                real_int_data: None,
-                lat_int_data: None        
+                num_data: None,
+                int_data: None
             }
         } else if self.ls_data.is_some() {
             // One is list, so do the operation to with other to every item
@@ -244,10 +170,8 @@ impl Var {
             }
             Var {
                 ls_data: Some(cur),
-                real_num_data: None,
-                lat_num_data: None,
-                real_int_data: None,
-                lat_int_data: None        
+                num_data: None,
+                int_data: None
             }
         } else if other.ls_data.is_some() {
             // One is list, so do the operation to with other to every item
@@ -257,72 +181,31 @@ impl Var {
             }
             Var {
                 ls_data: Some(cur),
-                real_num_data: None,
-                lat_num_data: None,
-                real_int_data: None,
-                lat_int_data: None        
+                num_data: None,
+                int_data: None
             }
         } else {
             // Check if using floats as it overrides intedness
-            if self.real_num_data.is_some() || self.lat_num_data.is_some()
-                    || other.real_num_data.is_some() || other.lat_num_data.is_some() {
+            if self.num_data.is_some() || self.num_data.is_some()
+                    || other.num_data.is_some() || other.num_data.is_some() {
                 let f_self = self.to_float();
                 let f_other = other.to_float();
 
-                let real = if f_self.real_num_data.is_some() && f_other.real_num_data.is_some() {
-                    Some(dec_op(f_self.real_num_data.unwrap(), f_other.real_num_data.unwrap()))
-                } else if f_self.real_num_data.is_some() {
-                    f_self.real_num_data
-                } else if f_other.real_num_data.is_some() {
-                    f_other.real_num_data
-                } else {
-                    None
-                };
-                let lat = if f_self.lat_num_data.is_some() && f_other.lat_num_data.is_some() {
-                    Some(dec_op(f_self.lat_num_data.unwrap(), f_other.lat_num_data.unwrap()))
-                } else if f_self.lat_num_data.is_some() {
-                    f_self.lat_num_data
-                } else if f_other.lat_num_data.is_some() {
-                    f_other.lat_num_data
-                } else {
-                    None
-                };
+                let f_res = dec_op(f_self.num_data.unwrap(), f_other.num_data.unwrap());
 
                 Var {
                     ls_data: None,
-                    real_num_data: real,
-                    lat_num_data: lat,
-                    real_int_data: None,
-                    lat_int_data: None
+                    num_data: Some(f_res),
+                    int_data: None
                 }
             } else {
                 // All ints
-                let real = if self.real_int_data.is_some() && other.real_int_data.is_some() {
-                    Some(int_op(self.real_int_data.unwrap(), other.real_int_data.unwrap()))
-                } else if self.real_int_data.is_some() {
-                    self.real_int_data
-                } else if other.real_int_data.is_some() {
-                    other.real_int_data
-                } else {
-                    None
-                };
-                let lat = if self.lat_int_data.is_some() && other.lat_int_data.is_some() {
-                    Some(int_op(self.lat_int_data.unwrap(), other.lat_int_data.unwrap()))
-                } else if self.lat_int_data.is_some() {
-                    self.lat_int_data
-                } else if other.lat_int_data.is_some() {
-                    other.lat_int_data
-                } else {
-                    None
-                };
-
+                let res = int_op(self.int_data.unwrap(), other.int_data.unwrap());
                 Var {
                     ls_data: None,
-                    real_num_data: None,
-                    lat_num_data: None,
-                    real_int_data: real,
-                    lat_int_data: lat
-                } 
+                    num_data: None,
+                    int_data: Some(res)
+                }
             }
         }
     }
@@ -345,126 +228,22 @@ impl Sub for Var {
 impl Mul for Var {
     type Output = Self;
     fn mul(self, other: Self) -> Self {
-        if self.lat_int_data.is_some() || self.lat_num_data.is_some()
-                || other.lat_int_data.is_some() || other.lat_num_data.is_some() {
-            let f_self = self.to_float();
-            let f_other = other.to_float();
-
-            let self_a = f_self.real_num_data.unwrap_or(BigDecimal::zero());
-            let self_b = f_self.lat_num_data.unwrap_or(BigDecimal::zero());
-            let other_a = f_other.real_num_data.unwrap_or(BigDecimal::zero());
-            let other_b = f_other.lat_num_data.unwrap_or(BigDecimal::zero());
-
-            let self_r = (self_a.square() + self_b.square()).sqrt().unwrap();
-            let other_r = (other_a.square() + other_b.square()).sqrt().unwrap();
-            let r = self_r * other_r;
-
-            let self_theta = if self_a.clone() == BigDecimal::zero() {
-                3.1415926535897932384626433832795028841971693993751 / 2.0
-            } else if self_a > BigDecimal::zero() {
-                (self_b / self_a.clone()).to_f64().unwrap().atan()
-            } else {
-                (self_b / self_a.clone()).to_f64().unwrap().atan()
-                    + 3.1415926535897932384626433832795028841971693993751
-            };
-            let other_theta = if other_a.clone() == BigDecimal::zero() {
-                3.1415926535897932384626433832795028841971693993751 / 2.0
-            } else if other_a > BigDecimal::zero() {
-                (other_b / other_a.clone()).to_f64().unwrap().atan()
-            } else {
-                (other_b / other_a.clone()).to_f64().unwrap().atan()
-                    + 3.1415926535897932384626433832795028841971693993751
-            };
-            let theta = self_theta + other_theta;
-
-            let new_a = r.clone() * BigDecimal::from_f64(theta.cos()).unwrap();
-            let new_b = r.clone() * BigDecimal::from_f64(theta.sin()).unwrap();
-            
-            Var {
-                ls_data: None,
-                real_num_data: Some(new_a),
-                lat_num_data: Some(new_b),
-                real_int_data: None,
-                lat_int_data: None
-            }
-        } else {
-            self.do_op(other, |a, b| a * b, |a, b| a * b)        
-        }
+        self.do_op(other, |a, b| a * b, |a, b| a * b) 
     }
 }
 
 impl Div for Var {
     type Output = Self;
     fn div(self, other: Self) -> Self {
-        if self.lat_int_data.is_some() || self.lat_num_data.is_some()
-                || other.lat_int_data.is_some() || other.lat_num_data.is_some() {
-            let f_self = self.to_float();
-            let f_other = other.to_float();
-
-            let self_a = f_self.real_num_data.unwrap_or(BigDecimal::zero());
-            let self_b = f_self.lat_num_data.unwrap_or(BigDecimal::zero());
-            let other_a = f_other.real_num_data.unwrap_or(BigDecimal::zero());
-            let other_b = f_other.lat_num_data.unwrap_or(BigDecimal::zero());
-
-            let self_r = (self_a.square() + self_b.square()).sqrt().unwrap();
-            let other_r = (other_a.square() + other_b.square()).sqrt().unwrap();
-            let r = self_r / other_r;
-
-            let self_theta = if self_a.clone() == BigDecimal::zero() {
-                3.1415926535897932384626433832795028841971693993751 / 2.0
-            } else if self_a > BigDecimal::zero() {
-                (self_b / self_a.clone()).to_f64().unwrap().atan()
-            } else {
-                (self_b / self_a.clone()).to_f64().unwrap().atan()
-                    + 3.1415926535897932384626433832795028841971693993751
-            };
-            let other_theta = if other_a.clone() == BigDecimal::zero() {
-                3.1415926535897932384626433832795028841971693993751 / 2.0
-            } else if other_a > BigDecimal::zero() {
-                (other_b / other_a.clone()).to_f64().unwrap().atan()
-            } else {
-                (other_b / other_a.clone()).to_f64().unwrap().atan()
-                    + 3.1415926535897932384626433832795028841971693993751
-            };
-            let theta = self_theta - other_theta;
-
-            let new_a = r.clone() * BigDecimal::from_f64(theta.cos()).unwrap();
-            let new_b = r.clone() * BigDecimal::from_f64(theta.sin()).unwrap();
-            
-            Var {
-                ls_data: None,
-                real_num_data: Some(new_a),
-                lat_num_data: Some(new_b),
-                real_int_data: None,
-                lat_int_data: None
-            }
-        } else {
-            self.do_op(other, |a, b| a / b, |a, b| a / b)        
-        }
+        self.do_op(other, |a, b| a / b, |a, b| a / b)
     }
 }
 
-// NOTE: Not xor but power
+// NOTE: Not xor but power. Also ignores lateral
 impl BitXor for Var {
     type Output = Self;
     fn bitxor(self, other: Self) -> Self {
-        if other.real_int_data.is_none() && !other.real_num_data.is_some() {
-            Var::impossible() 
-        } else if other.real_int_data.is_none() {
-            let exp = BigInt::from_str(other.real_num_data.unwrap().to_string().as_str()).unwrap();
-            let mut res = self.clone();
-            for _ in 0..exp.to_u32().expect("Non-integer or too-big exponent") {
-                res = res * self.clone();
-            }
-            res
-        } else {
-            let mut res = self.clone();
-            for _ in 0..other.real_int_data.unwrap().to_u32()
-                    .expect("Non-integer or too-big exponent") {
-                res = res * self.clone();
-            }
-            res
-        }
+        self.do_op(other, |a, b| a ^ b, |a, b| a ^ b)
     }
 }
 
