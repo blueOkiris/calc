@@ -111,33 +111,33 @@ impl BitXor for FComplex {
 // Do it again with integer math
 #[derive(Debug, Clone, Copy)]
 pub struct IComplex {
-    pub len: u64,
-    pub angle_deg: u64
+    pub len: i64,
+    pub angle_deg: i64
 }
 
 impl IComplex {
-    pub fn new_polar(len: u64, angle_deg: u64) -> Self {
+    pub fn new_polar(len: i64, angle_deg: i64) -> Self {
         Self {
             len, angle_deg
         }
     }
 
-    pub fn new_cardinal(real: u64, lateral: u64) -> Self {
-        let len = ((real.pow(2) + lateral.pow(2)) as f64).sqrt() as u64;
+    pub fn new_cardinal(real: i64, lateral: i64) -> Self {
+        let len = ((real.pow(2) + lateral.pow(2)) as f64).sqrt() as i64;
         let angle_deg = if real == 0 {
             180
         } else if real > 0 {
-            (((lateral / real) as f64).atan() * 180.0 / PI) as u64
+            (((lateral / real) as f64).atan() * 180.0 / PI) as i64
         } else {
-            ((((lateral / real) as f64).atan() + PI) * 180.0 / PI) as u64
+            ((((lateral / real) as f64).atan() + PI) * 180.0 / PI) as i64
         };
 
         Self::new_polar(len, angle_deg)
     }
 
-    pub fn to_cardinal(&self) -> (u64, u64) {
-        let real = self.len * (((self.angle_deg as f64).cos() * 180.0 / PI) as u64);
-        let lateral = self.len * (((self.angle_deg as f64).sin() * 180.0 / PI) as u64);
+    pub fn to_cardinal(&self) -> (i64, i64) {
+        let real = self.len * (((self.angle_deg as f64).cos() * 180.0 / PI) as i64);
+        let lateral = self.len * (((self.angle_deg as f64).sin() * 180.0 / PI) as i64);
         (real, lateral)
     }
 
@@ -191,7 +191,7 @@ impl BitXor for IComplex {
     type Output = Self;
     fn bitxor(self, other: Self) -> Self {
         let result = self.to_fcomplex() ^ other.to_fcomplex();
-        IComplex::new_polar(result.len as u64, (result.angle * 180.0 / PI) as u64)
+        IComplex::new_polar(result.len as i64, (result.angle * 180.0 / PI) as i64)
     }
 }
 
