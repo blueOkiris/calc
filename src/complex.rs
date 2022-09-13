@@ -7,7 +7,7 @@ use std::{
     f64::consts::PI,
     ops::{
         Add, Sub, Mul, Div, BitXor
-    }
+    }, cmp::Ordering
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -49,6 +49,10 @@ impl FComplex {
             format!("{}", self.len)
         }
     }
+
+    pub fn zero() -> Self {
+        Self::new_polar(0.0, 0.0)
+    }
 }
 
 impl Add for FComplex {
@@ -80,6 +84,46 @@ impl Div for FComplex {
     type Output = Self;
     fn div(self, other: Self) -> Self {
         Self::new_polar(self.len / other.len, self.angle - other.angle)
+    }
+}
+
+impl PartialEq for FComplex {
+    fn eq(&self, other: &Self) -> bool {
+        self.len == other.len && self.angle == other.angle
+    }
+
+    fn ne(&self, other: &Self) -> bool {
+        !self.eq(other)
+    }
+}
+
+impl PartialOrd for FComplex {
+    fn lt(&self, other: &Self) -> bool {
+        self.len < other.len
+    }
+
+    fn gt(&self, other: &Self) -> bool {
+        self.len > other.len
+    }
+
+    fn le(&self, other: &Self) -> bool {
+        self.len <= other.len
+    }
+
+    fn ge(&self, other: &Self) -> bool {
+        self.len >= other.len
+    }
+
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        if self.eq(other) {
+            Some(Ordering::Equal)
+        } else if self.le(other) {
+            Some(Ordering::Less)
+        } else if self.ge(other) {
+            Some(Ordering::Greater)
+        } else {
+            None
+        }
     }
 }
 
@@ -152,6 +196,10 @@ impl IComplex {
             format!("{}", self.len)
         }
     }
+
+    pub fn zero() -> Self {
+        Self::new_polar(0, 0)
+    }
 }
 
 impl Add for IComplex {
@@ -192,6 +240,46 @@ impl BitXor for IComplex {
     fn bitxor(self, other: Self) -> Self {
         let result = self.to_fcomplex() ^ other.to_fcomplex();
         IComplex::new_polar(result.len as i64, (result.angle * 180.0 / PI) as i64)
+    }
+}
+
+impl PartialEq for IComplex {
+    fn eq(&self, other: &Self) -> bool {
+        self.len == other.len && self.angle_deg == other.angle_deg
+    }
+
+    fn ne(&self, other: &Self) -> bool {
+        !self.eq(other)
+    }
+}
+
+impl PartialOrd for IComplex {
+    fn lt(&self, other: &Self) -> bool {
+        self.len < other.len
+    }
+
+    fn gt(&self, other: &Self) -> bool {
+        self.len > other.len
+    }
+
+    fn le(&self, other: &Self) -> bool {
+        self.len <= other.len
+    }
+
+    fn ge(&self, other: &Self) -> bool {
+        self.len >= other.len
+    }
+
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        if self.eq(other) {
+            Some(Ordering::Equal)
+        } else if self.le(other) {
+            Some(Ordering::Less)
+        } else if self.ge(other) {
+            Some(Ordering::Greater)
+        } else {
+            None
+        }
     }
 }
 
