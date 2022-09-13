@@ -40,6 +40,14 @@ impl FComplex {
         let lateral = self.len * self.angle.sin();
         (real, lateral)
     }
+    
+    pub fn to_string(&self) -> String {
+        if self.angle != 0.0 {
+            format!("{}∠{}", self.len, self.angle)    
+        } else {
+            format!("{}", self.len)
+        }
+    }
 }
 
 impl Add for FComplex {
@@ -133,6 +141,14 @@ impl IComplex {
 
     pub fn to_fcomplex(&self) -> FComplex {
         FComplex::new_polar(self.len as f64, (self.angle_deg as f64) * PI / 180.0)
+    }
+     
+    pub fn to_string(&self) -> String {
+        if self.angle_deg != 0 {
+            format!("{}∠{}°", self.len, self.angle_deg)    
+        } else {
+            format!("{}", self.len)
+        }
     }
 }
 
