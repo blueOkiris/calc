@@ -10,6 +10,7 @@ use std::{
     }
 };
 
+#[derive(Debug, Clone, Copy)]
 pub struct FComplex {
     pub len: f64,
     pub angle: f64
@@ -108,6 +109,7 @@ impl BitXor for FComplex {
 }
 
 // Do it again with integer math
+#[derive(Debug, Clone, Copy)]
 pub struct IComplex {
     pub len: u64,
     pub angle_deg: u64
