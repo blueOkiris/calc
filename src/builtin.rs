@@ -3,6 +3,7 @@
  * Description: All the standard builtin functions. Feel free to contribute and add!
  */
 
+use std::f64::consts;
 use crate::{
     var::Var,
     complex::{
@@ -162,6 +163,30 @@ pub const LEN: fn(&Vec<Var>)->Result<Var, String> = |vars| {
     }
 };
 
+pub const E: fn(&Vec<Var>)->Result<Var, String> = |vars| {
+    if vars.len() != 0 {
+        Err(String::from("e() does not take arguments."))
+    } else {
+        Ok(Var {
+            ls_data: None,
+            num_data: Some(FComplex::new_polar(consts::E, 0.0)),
+            int_data: None
+        })
+    }
+};
+
+pub const PI: fn(&Vec<Var>)->Result<Var, String> = |vars| {
+    if vars.len() != 0 {
+        Err(String::from("pi() does not take arguments."))
+    } else {
+        Ok(Var {
+            ls_data: None,
+            num_data: Some(FComplex::new_polar(consts::PI, 0.0)),
+            int_data: None
+        })
+    }
+};
+
 pub const ASIN: fn(&Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not implemented"));
 pub const ACOS: fn(&Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not implemented"));
 pub const ATAN: fn(&Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not implemented"));
@@ -169,8 +194,6 @@ pub const D2R: fn(&Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not im
 pub const R2D: fn(&Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not implemented"));
 pub const LOG: fn(&Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not implemented"));
 pub const LN: fn(&Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not implemented"));
-pub const E: fn(&Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not implemented"));
-pub const PI: fn(&Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not implemented"));
 pub const MOD: fn(&Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not implemented"));
 pub const FLOOR: fn(&Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not implemented"));
 pub const CEIL: fn(&Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not implemented"));
