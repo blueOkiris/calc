@@ -239,7 +239,7 @@ impl Div for Var {
     }
 }
 
-// NOTE: Not xor but power. Also ignores lateral
+// NOTE: Not xor but power
 impl BitXor for Var {
     type Output = Self;
     fn bitxor(self, other: Self) -> Self {
