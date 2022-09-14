@@ -11,7 +11,7 @@ use crate::{
     complex::{
         FComplex,
         IComplex
-    }
+    }, plugin::call_ext_fn
 };
 
 #[derive(Clone, Debug)]
@@ -257,7 +257,7 @@ fn eval_expr(ast: &Token, env: &Environment) -> Result<Var, String> {
                                                 = r.clone().as_ref() {
                                             if let Token::Term(i) = t.clone().as_ref() {
                                                 if let Token::Identifier(l) = i.clone().as_ref() {
-                                                    lib_str = l;
+                                                    lib_str = l.clone();
                                                 } else {
                                                     return Err(String::from(
                                                         "Expected ident for 1st arg in 'call'"
@@ -293,54 +293,18 @@ fn eval_expr(ast: &Token, env: &Environment) -> Result<Var, String> {
                         return Err(String::from("Expected ident for 1st argument in 'call'"));
                     }
 
-                    let func_str;
-                    if let Token::Expression(u, _, _) = args[1].clone().as_ref() {
-                        if let Token::UnaryExpression(e, _) = u.clone().as_ref() {
-                            if let Token::ExponentialExpression(p, _) = e.clone().as_ref() {
-                                if let Token::ProductExpression(s, _, _) = p.clone().as_ref() {
-                                    if let Token::SumExpression(r, _, _) = s.clone().as_ref() {
-                                        if let Token::RelationalExpression(t, _, _)
-                                                = r.clone().as_ref() {
-                                            if let Token::Term(i) = t.clone().as_ref() {
-                                                if let Token::Identifier(f) = i.clone().as_ref() {
-                                                    func_str = f;
-                                                } else {
-                                                    return Err(String::from(
-                                                        "Expected ident for 2nd arg in 'call'"
-                                                    ));
-                                                }  
-                                            } else {
-                                                return Err(String::from(
-                                                    "Expected ident for 2nd arg in 'call'"
-                                                ));
-                                            }
-                                        } else {
-                                            return Err(String::from(
-                                                "Expected ident for 2nd arg in 'call'"
-                                            ));
-                                        }
-                                    } else {
-                                        return Err(String::from(
-                                            "Expected ident for 2nd arg in 'call'"
-                                        ));
-                                    }
-                                } else {
-                                    return Err(String::from(
-                                        "Expected ident for 2nd arg in 'call'"
-                                    ));
-                                }
-                            } else {
-                                return Err(String::from("Expected ident for 2nd arg in 'call'"));
-                            }
-                        } else {
-                            return Err(String::from("Expected ident for 2nd arg in 'call'"));
+                    let mut real_args = args.clone();
+                    real_args.remove(0);
+
+                    let mut vars = Vec::new();
+                    for arg in real_args {
+                        match eval_expr(&arg, env) {
+                            Err(err) => return Err(err),
+                            Ok(val) => vars.push(val)
                         }
-                    } else {
-                        return Err(String::from("Expected ident for 2nd argument in 'call'"));
                     }
 
-                    // TODO: Implement dynamic lib stuff
-                    Err(String::from("Not implemented"))
+                    call_ext_fn(lib_str.as_str(), &vars)
                 }
             } else  if HashMap::from(BUILTIN_FUNCS).contains_key(name.as_str()) {
                 let mut eval_args = Vec::new();
