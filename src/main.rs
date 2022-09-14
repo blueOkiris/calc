@@ -40,7 +40,8 @@ fn main() {
     let conf = config_dir();
     if conf.is_some() {
         let mut init_file = conf.unwrap();
-        init_file.push("/calc/init");
+        init_file.push("calc");
+        init_file.push("init");
         if Path::new(&init_file).exists() {
             let file = File::open(init_file);
             if file.is_ok() {
