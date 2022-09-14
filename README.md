@@ -86,7 +86,7 @@ There are a number of functions to expand the functionality of the calculator to
 
 | Function | Description |
 |:----:|:-----------:|
-| call(lib, f, args...) | Calls a function from a Rust library. It is a special function that takes two identifiers as input (lib name and func name) as well as a list |
+| call(lib, args...) | Calls a function from a dynamic library. It is a special function that takes an identifier as input (lib name) as well as a list. See the following section for how to make a lib |
 | sin(x) | Return sine(x) where x (and everything else) is radians |
 | cos(x) | cosine |
 | tan(x) | tangent |
@@ -111,4 +111,59 @@ There are a number of functions to expand the functionality of the calculator to
 | comp(r, ang) | build a complex number from radius and angle |
 
 NOT IMPLEMENTED YET
+
+#### Custom Built-Ins
+
+If you want to make a custom built-in function, you'll need to make a Rust library and build it as a dynamic library.
+
+At a minimum, your Cargo.toml should look like:
+
+```
+[package]
+name = "<package_name>"
+version = "<version>"
+edition = "2021"
+
+[dependencies]
+...
+
+[lib]
+name = "<package_name>"
+crate-type = [ "cdylib" ]
+path = "src/<main code file>"
+```
+
+and your main code file should look like
+
+```
+#[derive(Clone, Copy)]
+pub struct IComplex {
+    pub len: i64,
+    pub angle_deg: i64
+}
+
+#[derive(Clone, Copy)]
+pub struct FComplex {
+    pub len: f64,
+    pub angle: f64
+}
+
+#[derive(Clone)]
+pub struct Var {
+    pub ls_data: Option<Vec<Var>>,
+    pub num_data: Option<FComplex>,
+    pub int_data: Option<IComplex>
+}
+
+#[no_mangle]
+pub fn execute(vars: &Vec<Var>) -> Var {
+    Var {
+        ls_data: None,
+        num_data: None,
+        int_data: None
+    }
+}
+```
+
+There is an example plugin under the ex-plug/ folder
 
