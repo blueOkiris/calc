@@ -3,10 +3,12 @@
  * Description: All the standard builtin functions. Feel free to contribute and add!
  */
 
-use std::f64::consts;
 use crate::{
     var::Var,
-    complex::FComplex
+    complex::{
+        FComplex,
+        IComplex
+    }
 };
 
 pub const BUILTIN_FUNCS: [(&str, &fn(&Vec<Var>)->Result<Var, String>); 22] = [
@@ -142,6 +144,24 @@ pub const TAN: fn(&Vec<Var>)->Result<Var, String> = |vars| {
     }
 };
 
+pub const LEN: fn(&Vec<Var>)->Result<Var, String> = |vars| {
+    if vars.len() != 1 {
+        Err(String::from("Expected on argument for len."))
+    } else if vars[0].ls_data.is_some() {
+        Ok(Var {
+            ls_data: None,
+            num_data: None,
+            int_data: Some(IComplex::new_polar(vars[0].clone().ls_data.unwrap().len() as i64, 0))
+        })
+    } else {
+        Ok(Var {
+            ls_data: None,
+            num_data: None,
+            int_data: Some(IComplex::new_polar(1, 0))
+        })
+    }
+};
+
 pub const ASIN: fn(&Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not implemented"));
 pub const ACOS: fn(&Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not implemented"));
 pub const ATAN: fn(&Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not implemented"));
@@ -156,7 +176,6 @@ pub const FLOOR: fn(&Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not 
 pub const CEIL: fn(&Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not implemented"));
 pub const ABS: fn(&Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not implemented"));
 pub const IDX: fn(&Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not implemented"));
-pub const LEN: fn(&Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not implemented"));
 pub const APP: fn(&Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not implemented"));
 pub const DEL: fn(&Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not implemented"));
 pub const SIGN: fn(&Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not implemented"));
