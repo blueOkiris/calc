@@ -127,7 +127,7 @@ impl PartialOrd for FComplex {
     }
 }
 
-// NOTE: Not xor but power. Also ignores lateral
+// NOTE: Not xor but power
 impl BitXor for FComplex {
     type Output = Self;
     fn bitxor(self, other: Self) -> Self {
