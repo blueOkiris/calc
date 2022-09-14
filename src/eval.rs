@@ -314,7 +314,7 @@ fn eval_expr(ast: &Token, env: &Environment) -> Result<Var, String> {
                         Ok(val) => eval_args.push(val)
                     }
                 }
-                HashMap::from(BUILTIN_FUNCS)[name.as_str()](eval_args)
+                HashMap::from(BUILTIN_FUNCS)[name.as_str()](&eval_args)
             } else if env.funcs.contains_key(name) {
                 let mut eval_args = Vec::new();
                 for arg in args {
