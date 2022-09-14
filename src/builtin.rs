@@ -126,7 +126,22 @@ pub const COS: fn(&Vec<Var>)->Result<Var, String> = |vars| {
     }
 };
 
-pub const TAN: fn(&Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not implemented"));
+pub const TAN: fn(&Vec<Var>)->Result<Var, String> = |vars| {
+    if vars.len() != 1 {
+        Err(String::from("Expected one argument for tan."))
+    } else {
+        match SIN(vars) {
+            Err(err) => Err(err),
+            Ok(sin_val) => {
+                match COS(vars) {
+                    Err(err) => Err(err),
+                    Ok(cos_val) => Ok(sin_val / cos_val)
+                }
+            }
+        }
+    }
+};
+
 pub const ASIN: fn(&Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not implemented"));
 pub const ACOS: fn(&Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not implemented"));
 pub const ATAN: fn(&Vec<Var>)->Result<Var, String> = |_| Err(String::from("Not implemented"));
